@@ -237,13 +237,11 @@
             COMPLETED: 'Completed'
         };
 
+        const API = 'https://rfro12-api.chris-capistrano.workers.dev';
         let transactions = [];
         let selectedTransaction = null;
 
-        function init() {
-            const saved = localStorage.getItem('rfr-transactions');
-            if (saved) transactions = JSON.parse(saved);
-            
+        async function init() {
             const select = document.getElementById('filterStage');
             Object.values(STAGES).forEach(stage => {
                 const opt = document.createElement('option');
@@ -258,12 +256,33 @@
             document.getElementById('applicantName').addEventListener('input', updateRefPreview);
             document.getElementById('dateReceived').addEventListener('change', updateRefPreview);
 
+            await loadTransactions();
+        }
+
+        async function loadTransactions() {
+            try {
+                document.getElementById('totalCount').textContent = '...';
+                const res = await fetch(API + '/transactions');
+                transactions = await res.json();
+            } catch(e) {
+                console.error('Failed to load:', e);
+                transactions = [];
+            }
             renderDashboard();
             renderTransactions();
         }
 
-        function save() {
-            localStorage.setItem('rfr-transactions', JSON.stringify(transactions));
+        async function save() {
+            try {
+                await fetch(API + '/transactions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(transactions)
+                });
+            } catch(e) {
+                console.error('Failed to save:', e);
+                alert('Warning: Could not save to server. Please check your connection.');
+            }
         }
 
         function generateRef(name, date) {
@@ -297,7 +316,7 @@
             document.getElementById('email').value = '';
         }
 
-        function addTransaction() {
+        async function addTransaction() {
             const name = document.getElementById('applicantName').value;
             const type = document.getElementById('requestType').value;
             const date = document.getElementById('dateReceived').value;
@@ -326,7 +345,7 @@
             };
 
             transactions.push(t);
-            save();
+            await save();
             closeAddForm();
             renderDashboard();
             renderTransactions();
@@ -482,7 +501,7 @@
             document.getElementById('editModal').classList.add('hidden');
         }
 
-        function saveEdit() {
+        async function saveEdit() {
             const reason = document.getElementById('editReason').value.trim();
             const name = document.getElementById('editApplicantName').value.trim();
             const type = document.getElementById('editRequestType').value.trim();
@@ -509,7 +528,7 @@
             });
 
             selectedTransaction = t;
-            save();
+            await save();
             closeEditForm();
             renderDashboard();
             renderTransactions();
@@ -529,7 +548,7 @@
             document.getElementById('deleteModal').classList.add('hidden');
         }
 
-        function confirmDelete() {
+        async function confirmDelete() {
             const reason = document.getElementById('deleteReason').value.trim();
             const pin = document.getElementById('deletePIN').value;
             if (!reason) { alert('Please provide a reason for deletion.'); return; }
@@ -540,14 +559,14 @@
             }
             transactions = transactions.filter(tx => tx.id !== selectedTransaction.id);
             selectedTransaction = null;
-            save();
+            await save();
             closeDeleteForm();
             renderDashboard();
             renderTransactions();
             document.getElementById('detailsPanel').innerHTML = '<div class="p-8 text-center text-gray-500">Select a transaction</div>';
         }
 
-        function updateStage(newStage) {
+        async function updateStage(newStage) {
             const notes = document.getElementById('stageNotes').value;
             const t = transactions.find(tx => tx.id === selectedTransaction.id);
             
@@ -563,7 +582,7 @@
             }
 
             selectedTransaction = t;
-            save();
+            await save();
             renderDashboard();
             renderTransactions();
             renderDetails();
@@ -677,6 +696,8 @@
         setInterval(updateClock, 1000);
 
         init();
+        // Auto-refresh every 30 seconds so all users see live data
+        setInterval(loadTransactions, 30000);
     </script>
 </body>
 </html>
