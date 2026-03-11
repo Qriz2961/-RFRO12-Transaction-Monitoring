@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transaction Monitoring</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+    <div class="bg-blue-600 text-white p-6 shadow-lg">
+        <div class="max-w-7xl mx-auto">
+            <h1 class="text-3xl font-bold">Transaction Monitoring</h1>
+            <p class="text-blue-100 mt-1">Regional Franchising and Regulatory Office XIII</p>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto p-6">
+        <div class="border-b-2 border-gray-200 mb-6">
+            <div class="flex gap-2">
+                <button onclick="switchTab('dashboard')" id="dashboardTab" class="px-6 py-3 font-medium text-blue-600 border-b-2 border-blue-600">
+                    📊 Dashboard
+                </button>
+                <button onclick="switchTab('transactions')" id="transactionsTab" class="px-6 py-3 font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700">
+                    📋 Transactions
+                </button>
+            </div>
+        </div>
+
+        <div id="dashboardView">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-lg shadow">
+                    <div class="text-3xl font-bold text-blue-700" id="totalCount">0</div>
+                    <div class="text-blue-600 text-sm mt-1">Total Transactions</div>
+                </div>
+                <div class="bg-yellow-50 border-l-4 border-yellow-500 p-6 rounded-lg shadow">
+                    <div class="text-3xl font-bold text-yellow-700" id="pendingCount">0</div>
+                    <div class="text-yellow-600 text-sm mt-1">In Progress</div>
+                </div>
+                <div class="bg-green-50 border-l-4 border-green-500 p-6 rounded-lg shadow">
+                    <div class="text-3xl font-bold text-green-700" id="completedCount">0</div>
+                    <div class="text-green-600 text-sm mt-1">Completed</div>
+                </div>
+                <div class="bg-red-50 border-l-4 border-red-500 p-6 rounded-lg shadow">
+                    <div class="text-3xl font-bold text-red-700" id="rejectedCount">0</div>
+                    <div class="text-red-600 text-sm mt-1">Not Accepted</div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow mb-6">
+                <div class="p-4 border-b border-gray-200">
+                    <h2 class="text-xl font-semibold">Transactions by Stage</h2>
+                </div>
+                <div class="p-6" id="stageBreakdown"></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white rounded-lg shadow">
+                    <div class="p-4 border-b border-gray-200">
+                        <h2 class="text-xl font-semibold">Processing Type</h2>
+                    </div>
+                    <div class="p-6" id="processingChart"></div>
+                </div>
+                <div class="bg-white rounded-lg shadow">
+                    <div class="p-4 border-b border-gray-200">
+                        <h2 class="text-xl font-semibold">Recent Activity</h2>
+                    </div>
+                    <div class="p-6" id="recentActivity"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="transactionsView" style="display: none;">
+            <div class="flex gap-4 mb-6 flex-wrap">
+                <input type="text" id="searchBox" placeholder="Search..." 
+                    class="flex-1 min-w-64 px-4 py-2 border border-gray-300 rounded-lg">
+                <select id="filterStage" class="px-4 py-2 border border-gray-300 rounded-lg">
+                    <option value="ALL">All Stages</option>
+                </select>
+                <button onclick="showAddForm()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                    + New Request
+                </button>
+                <button onclick="exportData()" class="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700">
+                    📥 Export
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 bg-white rounded-lg shadow">
+                    <div class="p-4 border-b border-gray-200">
+                        <h2 class="text-xl font-semibold">Transactions (<span id="transactionCount">0</span>)</h2>
+                    </div>
+                    <div id="transactionList"></div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow">
+                    <div class="p-4 border-b border-gray-200">
+                        <h2 class="text-xl font-semibold">Details</h2>
+                    </div>
+                    <div id="detailsPanel" class="p-8 text-center text-gray-500">
+                        Select a transaction
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="addModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg max-w-md w-full p-6 max-h-screen overflow-y-auto">
+            <h2 class="text-2xl font-bold mb-4">New Transaction</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Date Received *</label>
+                    <input type="date" id="dateReceived" class="w-full px-3 py-2 border rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Applicant Name *</label>
+                    <input type="text" id="applicantName" class="w-full px-3 py-2 border rounded-lg">
+                    <div id="refPreview" class="text-xs text-gray-500 mt-1"></div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Request Type *</label>
+                    <input type="text" id="requestType" class="w-full px-3 py-2 border rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Contact Number</label>
+                    <input type="tel" id="contactNumber" class="w-full px-3 py-2 border rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Email</label>
+                    <input type="email" id="email" class="w-full px-3 py-2 border rounded-lg">
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="closeAddForm()" class="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50">
+                    Cancel
+                </button>
+                <button onclick="addTransaction()" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    Create
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const STAGES = {
+            PREPARED: 'Request Prepared',
+            SUBMITTED: 'Submitted',
+            CHECKLISTING: 'Checklisting',
+            PRE_ACCEPTANCE: 'Pre-acceptance Review',
+            INCOMPLETE: 'Incomplete - Awaiting Documents',
+            NOT_ACCEPTED: 'Not Accepted',
+            ASSESSMENT: 'Assessment',
+            PAYMENT_PENDING: 'Payment Pending',
+            PAYMENT_COMPLETED: 'Payment Completed',
+            TECHNICAL: 'Technical Processing',
+            LEGAL: 'Legal Processing',
+            ADMINISTRATIVE: 'Administrative Processing',
+            HEARING_SCHEDULED: 'Hearing Scheduled',
+            RD_APPROVAL: 'Awaiting RD Approval',
+            DECISION_PREPARED: 'Decision Prepared',
+            RELEASED: 'Decision Released',
+            COMPLETED: 'Completed'
+        };
+
+        let transactions = [];
+        let selectedTransaction = null;
+
+        function init() {
+            const saved = localStorage.getItem('rfr-transactions');
+            if (saved) transactions = JSON.parse(saved);
+            
+            const select = document.getElementById('filterStage');
+            Object.values(STAGES).forEach(stage => {
+                const opt = document.createElement('option');
+                opt.value = stage;
+                opt.textContent = stage;
+                select.appendChild(opt);
+            });
+
+            document.getElementById('dateReceived').value = new Date().toISOString().split('T')[0];
+            document.getElementById('searchBox').addEventListener('input', renderTransactions);
+            document.getElementById('filterStage').addEventListener('change', renderTransactions);
+            document.getElementById('applicantName').addEventListener('input', updateRefPreview);
+            document.getElementById('dateReceived').addEventListener('change', updateRefPreview);
+
+            renderDashboard();
+            renderTransactions();
+        }
+
+        function save() {
+            localStorage.setItem('rfr-transactions', JSON.stringify(transactions));
+        }
+
+        function generateRef(name, date) {
+            const initials = name.trim().split(' ').map(p => p.charAt(0).toUpperCase()).join('').substring(0, 3);
+            const dateStr = date.replace(/-/g, '');
+            const num = Math.floor(100 + Math.random() * 900);
+            return `RFR-${initials}-${dateStr}-${num}`;
+        }
+
+        function updateRefPreview() {
+            const name = document.getElementById('applicantName').value;
+            const date = document.getElementById('dateReceived').value;
+            const preview = document.getElementById('refPreview');
+            if (name && date) {
+                preview.textContent = 'Reference: ' + generateRef(name, date);
+            } else {
+                preview.textContent = '';
+            }
+        }
+
+        function showAddForm() {
+            document.getElementById('addModal').classList.remove('hidden');
+        }
+
+        function closeAddForm() {
+            document.getElementById('addModal').classList.add('hidden');
+            document.getElementById('applicantName').value = '';
+            document.getElementById('requestType').value = '';
+            document.getElementById('contactNumber').value = '';
+            document.getElementById('email').value = '';
+        }
+
+        function addTransaction() {
+            const name = document.getElementById('applicantName').value;
+            const type = document.getElementById('requestType').value;
+            const date = document.getElementById('dateReceived').value;
+
+            if (!name || !type || !date) {
+                alert('Please fill required fields');
+                return;
+            }
+
+            const t = {
+                id: Date.now().toString(),
+                referenceNumber: generateRef(name, date),
+                applicantName: name,
+                requestType: type,
+                contactNumber: document.getElementById('contactNumber').value,
+                email: document.getElementById('email').value,
+                dateReceived: date,
+                stage: STAGES.PREPARED,
+                createdAt: new Date().toISOString(),
+                history: [{
+                    stage: STAGES.PREPARED,
+                    timestamp: new Date().toISOString(),
+                    notes: 'Transaction created'
+                }]
+            };
+
+            transactions.push(t);
+            save();
+            closeAddForm();
+            renderDashboard();
+            renderTransactions();
+        }
+
+        function getStageColor(stage) {
+            if (stage === STAGES.COMPLETED) return 'bg-green-100 text-green-800 border-green-300';
+            if (stage === STAGES.NOT_ACCEPTED || stage === STAGES.INCOMPLETE) return 'bg-red-100 text-red-800 border-red-300';
+            if (stage === STAGES.PAYMENT_PENDING) return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+            if (stage === STAGES.RELEASED) return 'bg-blue-100 text-blue-800 border-blue-300';
+            return 'bg-gray-100 text-gray-800 border-gray-300';
+        }
+
+        function renderTransactions() {
+            const search = document.getElementById('searchBox').value.toLowerCase();
+            const filter = document.getElementById('filterStage').value;
+            
+            const filtered = transactions.filter(t => {
+                const matchSearch = t.referenceNumber.toLowerCase().includes(search) || 
+                                   t.applicantName.toLowerCase().includes(search);
+                const matchFilter = filter === 'ALL' || t.stage === filter;
+                return matchSearch && matchFilter;
+            });
+
+            document.getElementById('transactionCount').textContent = filtered.length;
+            const list = document.getElementById('transactionList');
+
+            if (filtered.length === 0) {
+                list.innerHTML = '<div class="p-8 text-center text-gray-500">No transactions</div>';
+                return;
+            }
+
+            list.innerHTML = filtered.map(t => `
+                <div class="p-4 border-b hover:bg-gray-50 cursor-pointer" onclick="selectTransaction('${t.id}')">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <div class="font-semibold text-lg">${t.referenceNumber}</div>
+                            <div class="text-gray-600">${t.applicantName}</div>
+                            <div class="text-sm text-gray-500 mt-1">${t.requestType}</div>
+                        </div>
+                        <span class="px-3 py-1 rounded-full text-sm border ${getStageColor(t.stage)}">
+                            ${t.stage}
+                        </span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function selectTransaction(id) {
+            selectedTransaction = transactions.find(t => t.id === id);
+            renderDetails();
+        }
+
+        function renderDetails() {
+            const panel = document.getElementById('detailsPanel');
+            if (!selectedTransaction) {
+                panel.innerHTML = '<div class="p-8 text-center text-gray-500">Select a transaction</div>';
+                return;
+            }
+
+            const t = selectedTransaction;
+            const nextStages = getNextStages(t.stage);
+
+            panel.innerHTML = `
+                <div class="p-4">
+                    <div class="mb-4">
+                        <span class="px-3 py-1 rounded-full text-sm border ${getStageColor(t.stage)}">
+                            ${t.stage}
+                        </span>
+                    </div>
+                    <div class="space-y-2 text-sm mb-4">
+                        <div><span class="text-gray-500">Date:</span> ${new Date(t.dateReceived).toLocaleDateString()}</div>
+                        <div><span class="text-gray-500">Type:</span> ${t.requestType}</div>
+                        ${t.contactNumber ? `<div><span class="text-gray-500">Contact:</span> ${t.contactNumber}</div>` : ''}
+                        ${t.email ? `<div><span class="text-gray-500">Email:</span> ${t.email}</div>` : ''}
+                        ${t.processingType ? `<div><span class="text-gray-500">Processing:</span> ${t.processingType}</div>` : ''}
+                    </div>
+                    
+                    ${nextStages.length > 0 && t.stage !== STAGES.COMPLETED && t.stage !== STAGES.NOT_ACCEPTED ? `
+                        <button onclick="toggleStageUpdate()" class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 mb-3">
+                            Update Stage
+                        </button>
+                        <div id="stageUpdate" style="display:none;" class="mb-4 p-3 bg-gray-50 rounded-lg">
+                            <div class="text-sm font-medium mb-2">Next Stage:</div>
+                            ${nextStages.map(s => `
+                                <button onclick="updateStage('${s}')" class="w-full text-left px-3 py-2 mb-2 bg-white border rounded hover:bg-gray-100 text-sm">
+                                    ${s}
+                                </button>
+                            `).join('')}
+                            <textarea id="stageNotes" placeholder="Notes (optional)" class="w-full px-3 py-2 border rounded text-sm" rows="2"></textarea>
+                        </div>
+                    ` : ''}
+
+                    <div>
+                        <h3 class="font-semibold mb-2">History</h3>
+                        ${t.history.slice().reverse().map(h => `
+                            <div class="border-l-2 border-blue-400 pl-3 mb-3">
+                                <div class="font-medium text-sm">${h.stage}</div>
+                                ${h.notes ? `<div class="text-xs text-gray-600 mt-1">${h.notes}</div>` : ''}
+                                <div class="text-xs text-gray-500 mt-1">${new Date(h.timestamp).toLocaleString()}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function toggleStageUpdate() {
+            const el = document.getElementById('stageUpdate');
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function getNextStages(stage) {
+            const map = {
+                [STAGES.PREPARED]: [STAGES.SUBMITTED],
+                [STAGES.SUBMITTED]: [STAGES.CHECKLISTING],
+                [STAGES.CHECKLISTING]: [STAGES.PRE_ACCEPTANCE],
+                [STAGES.PRE_ACCEPTANCE]: [STAGES.INCOMPLETE, STAGES.NOT_ACCEPTED, STAGES.ASSESSMENT],
+                [STAGES.INCOMPLETE]: [STAGES.PRE_ACCEPTANCE],
+                [STAGES.ASSESSMENT]: [STAGES.PAYMENT_PENDING, STAGES.TECHNICAL, STAGES.LEGAL, STAGES.ADMINISTRATIVE],
+                [STAGES.PAYMENT_PENDING]: [STAGES.PAYMENT_COMPLETED],
+                [STAGES.PAYMENT_COMPLETED]: [STAGES.TECHNICAL, STAGES.LEGAL, STAGES.ADMINISTRATIVE],
+                [STAGES.TECHNICAL]: [STAGES.RD_APPROVAL, STAGES.DECISION_PREPARED],
+                [STAGES.ADMINISTRATIVE]: [STAGES.RD_APPROVAL, STAGES.DECISION_PREPARED],
+                [STAGES.LEGAL]: [STAGES.HEARING_SCHEDULED, STAGES.RD_APPROVAL, STAGES.DECISION_PREPARED],
+                [STAGES.HEARING_SCHEDULED]: [STAGES.RD_APPROVAL, STAGES.DECISION_PREPARED],
+                [STAGES.RD_APPROVAL]: [STAGES.DECISION_PREPARED],
+                [STAGES.DECISION_PREPARED]: [STAGES.RELEASED],
+                [STAGES.RELEASED]: [STAGES.COMPLETED]
+            };
+            return map[stage] || [];
+        }
+
+        function updateStage(newStage) {
+            const notes = document.getElementById('stageNotes').value;
+            const t = transactions.find(tx => tx.id === selectedTransaction.id);
+            
+            t.stage = newStage;
+            t.history.push({
+                stage: newStage,
+                timestamp: new Date().toISOString(),
+                notes: notes
+            });
+
+            if ([STAGES.TECHNICAL, STAGES.LEGAL, STAGES.ADMINISTRATIVE].includes(newStage) && !t.processingType) {
+                t.processingType = newStage.split(' ')[0];
+            }
+
+            selectedTransaction = t;
+            save();
+            renderDashboard();
+            renderTransactions();
+            renderDetails();
+        }
+
+        function switchTab(tab) {
+            document.getElementById('dashboardTab').className = tab === 'dashboard' 
+                ? 'px-6 py-3 font-medium text-blue-600 border-b-2 border-blue-600'
+                : 'px-6 py-3 font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700';
+            document.getElementById('transactionsTab').className = tab === 'transactions'
+                ? 'px-6 py-3 font-medium text-blue-600 border-b-2 border-blue-600'
+                : 'px-6 py-3 font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700';
+            
+            document.getElementById('dashboardView').style.display = tab === 'dashboard' ? 'block' : 'none';
+            document.getElementById('transactionsView').style.display = tab === 'transactions' ? 'block' : 'none';
+        }
+
+        function renderDashboard() {
+            let total = transactions.length;
+            let completed = transactions.filter(t => t.stage === STAGES.COMPLETED).length;
+            let rejected = transactions.filter(t => t.stage === STAGES.NOT_ACCEPTED).length;
+            let pending = total - completed - rejected;
+
+            document.getElementById('totalCount').textContent = total;
+            document.getElementById('completedCount').textContent = completed;
+            document.getElementById('rejectedCount').textContent = rejected;
+            document.getElementById('pendingCount').textContent = pending;
+
+            const byStage = {};
+            Object.values(STAGES).forEach(s => byStage[s] = 0);
+            transactions.forEach(t => byStage[t.stage]++);
+
+            const breakdown = document.getElementById('stageBreakdown');
+            breakdown.innerHTML = Object.entries(byStage)
+                .filter(([s, c]) => c > 0)
+                .map(([stage, count]) => {
+                    const pct = Math.round((count / total) * 100);
+                    return `
+                        <div class="mb-4">
+                            <div class="flex justify-between mb-1">
+                                <span class="text-sm">${stage}</span>
+                                <span class="text-sm text-gray-600">${count} (${pct}%)</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-8 overflow-hidden">
+                                <div class="bg-blue-600 h-8 flex items-center justify-end pr-2 text-white text-sm font-semibold" style="width: ${pct}%">
+                                    ${pct}%
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('') || '<div class="text-gray-500 text-center">No data</div>';
+
+            const byType = { Technical: 0, Legal: 0, Administrative: 0 };
+            transactions.forEach(t => {
+                if (t.processingType) byType[t.processingType]++;
+            });
+
+            const chart = document.getElementById('processingChart');
+            const typeTotal = Object.values(byType).reduce((a, b) => a + b, 0);
+            chart.innerHTML = Object.entries(byType)
+                .filter(([t, c]) => c > 0)
+                .map(([type, count]) => {
+                    const pct = Math.round((count / typeTotal) * 100);
+                    const colors = { Technical: 'bg-blue-500', Legal: 'bg-purple-500', Administrative: 'bg-green-500' };
+                    return `
+                        <div class="mb-3">
+                            <div class="flex justify-between text-sm mb-1">
+                                <span>${type}</span>
+                                <span class="text-gray-600">${count} (${pct}%)</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="${colors[type]} h-2 rounded-full" style="width: ${pct}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('') || '<div class="text-gray-500 text-center">No data</div>';
+
+            const recent = [...transactions]
+                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                .slice(0, 5);
+
+            const activity = document.getElementById('recentActivity');
+            activity.innerHTML = recent.map(t => {
+                const latest = t.history[t.history.length - 1];
+                return `
+                    <div class="mb-4 pb-4 border-b last:border-0">
+                        <div class="font-semibold text-sm">${t.referenceNumber}</div>
+                        <div class="text-xs text-gray-600 mt-1">${t.applicantName} - ${latest.stage}</div>
+                        <div class="text-xs text-gray-400 mt-1">${new Date(latest.timestamp).toLocaleString()}</div>
+                    </div>
+                `;
+            }).join('') || '<div class="text-gray-500 text-center">No activity</div>';
+        }
+
+        function exportData() {
+            const blob = new Blob([JSON.stringify(transactions, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `transactions-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        init();
+    </script>
+</body>
+</html>
