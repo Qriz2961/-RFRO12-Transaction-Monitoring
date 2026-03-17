@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Transaction Monitoring - RFRO XIII</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .ac-dropdown{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #d1d5db;border-radius:0.5rem;z-index:100;max-height:180px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.1)}
+        .ac-item{padding:8px 12px;font-size:13px;cursor:pointer;border-bottom:1px solid #f3f4f6}
+        .ac-item:hover{background:#eff6ff}
+        .fee-info{background:#f0fdf4;border:1px solid #86efac;border-radius:0.5rem;padding:10px 14px;margin-top:6px;font-size:13px;display:none}
+    </style>
 </head>
 <body class="bg-gray-50">
 
@@ -15,9 +21,12 @@
                 <h1 class="text-3xl font-bold">Transaction Monitoring</h1>
                 <p class="text-blue-100 mt-1">Regional Franchising and Regulatory Office XIII</p>
             </div>
-            <div class="text-right">
-                <div class="text-xl font-semibold" id="clockTime"></div>
-                <div class="text-blue-100 text-sm mt-1" id="clockDate"></div>
+            <div class="text-right flex items-center gap-4">
+                <div>
+                    <div class="text-xl font-semibold" id="clockTime"></div>
+                    <div class="text-blue-100 text-sm mt-1" id="clockDate"></div>
+                </div>
+                <button onclick="openSettings()" title="Personnel & Settings" class="text-blue-100 hover:text-white text-3xl leading-none">&#9881;</button>
             </div>
         </div>
     </div>
@@ -30,6 +39,7 @@
             <div class="flex gap-1 flex-wrap">
                 <button onclick="switchTab('dashboard')" id="dashboardTab" class="px-5 py-3 font-medium text-blue-600 border-b-2 border-blue-600">&#128202; Dashboard</button>
                 <button onclick="switchTab('transactions')" id="transactionsTab" class="px-5 py-3 font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700">&#128203; Transactions</button>
+                <button onclick="switchTab('visitors')" id="visitorsTab" class="px-5 py-3 font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700">&#128101; Visitors &amp; Bookings</button>
                 <button onclick="switchTab('collections')" id="collectionsTab" class="px-5 py-3 font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700">&#128176; Collections</button>
                 <button onclick="switchTab('report')" id="reportTab" class="px-5 py-3 font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700">&#128196; Daily Report</button>
                 <button onclick="switchTab('monthly')" id="monthlyTab" class="px-5 py-3 font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700">&#128197; Monthly Report</button>
@@ -58,12 +68,18 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div class="bg-orange-50 border-l-4 border-orange-500 p-5 rounded-lg shadow">
-                    <div class="flex items-center gap-2 mb-3">
-                        <span class="text-xl">&#9888;&#65039;</span>
-                        <span class="font-semibold text-orange-700">Overdue Requests (&gt;24 hrs at current stage)</span>
+                <div class="bg-orange-50 border-l-4 border-orange-500 rounded-lg shadow overflow-hidden">
+                    <button onclick="toggleOverdue()" class="w-full flex items-center justify-between p-5 text-left">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xl">&#9888;&#65039;</span>
+                            <span class="font-semibold text-orange-700">Overdue Requests (&gt;24 hrs at current stage)</span>
+                            <span id="overdueCountBadge" class="hidden bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full"></span>
+                        </div>
+                        <span id="overdueChevron" class="text-orange-500 font-bold text-lg">&#9660;</span>
+                    </button>
+                    <div id="overduePanel" class="hidden px-5 pb-4">
+                        <div id="flaggedList" class="text-sm text-orange-800 space-y-1"></div>
                     </div>
-                    <div id="flaggedList" class="text-sm text-orange-800 space-y-1"></div>
                 </div>
                 <div class="bg-emerald-50 border-l-4 border-emerald-500 p-5 rounded-lg shadow">
                     <div class="font-semibold text-emerald-700 mb-2">&#128176; Today's Collection</div>
@@ -163,9 +179,210 @@
             <div id="monthlyContent" class="bg-white rounded-lg shadow p-8"></div>
         </div>
 
+        <!-- VISITORS & BOOKINGS -->
+        <div id="visitorsView" style="display:none;">
+            <div class="flex gap-4 mb-6 flex-wrap items-center justify-between">
+                <div class="flex gap-2 flex-wrap" id="visitTypeFilters">
+                    <button onclick="setVisitFilter('ALL')" id="vf-ALL" class="px-4 py-2 rounded-full text-sm font-medium bg-gray-700 text-white">All</button>
+                    <button onclick="setVisitFilter('Walk-in')" id="vf-Walk-in" class="px-4 py-2 rounded-full text-sm font-medium bg-white border text-gray-600 hover:bg-gray-50">&#128694; Walk-in</button>
+                    <button onclick="setVisitFilter('Booked')" id="vf-Booked" class="px-4 py-2 rounded-full text-sm font-medium bg-white border text-gray-600 hover:bg-gray-50">&#128197; Booked</button>
+                    <button onclick="setVisitFilter('Complaint')" id="vf-Complaint" class="px-4 py-2 rounded-full text-sm font-medium bg-white border text-gray-600 hover:bg-gray-50">&#9888; Complaint</button>
+                    <button onclick="setVisitFilter('Assistance')" id="vf-Assistance" class="px-4 py-2 rounded-full text-sm font-medium bg-white border text-gray-600 hover:bg-gray-50">&#128172; Assistance</button>
+                    <button onclick="setVisitFilter('Follow-up')" id="vf-Follow-up" class="px-4 py-2 rounded-full text-sm font-medium bg-white border text-gray-600 hover:bg-gray-50">&#128279; Follow-up</button>
+                </div>
+                <button onclick="showVisitorForm()" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 font-medium">+ Register Visitor</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="bg-orange-50 border-l-4 border-orange-400 p-4 rounded-lg shadow">
+                    <div class="text-2xl font-bold text-orange-700" id="visQueueCount">0</div>
+                    <div class="text-orange-600 text-sm mt-1">Walk-in Queue</div>
+                </div>
+                <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg shadow">
+                    <div class="text-2xl font-bold text-blue-700" id="visBookedCount">0</div>
+                    <div class="text-blue-600 text-sm mt-1">Upcoming Bookings</div>
+                </div>
+                <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg shadow">
+                    <div class="text-2xl font-bold text-red-700" id="visComplaintCount">0</div>
+                    <div class="text-red-600 text-sm mt-1">Open Complaints</div>
+                </div>
+            </div>
+            <div id="walkinQueue" class="mb-4 hidden">
+                <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                    <div class="font-semibold text-orange-700 mb-3">&#128694; Current Walk-in Queue</div>
+                    <div id="queueList" class="flex flex-wrap gap-3"></div>
+                </div>
+            </div>
+            <div id="visitorList" class="bg-white rounded-lg shadow"></div>
+        </div>
+
+    </div><!-- /max-w-7xl -->
+
+    <!-- STAGE UPDATE MODAL (PIN-gated) -->
+    <div id="stageModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg max-w-md w-full p-6">
+            <h2 class="text-xl font-bold mb-1">Update Stage</h2>
+            <p id="stageModalRef" class="text-sm text-gray-500 mb-4"></p>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Current Stage</label>
+                    <span id="stageModalCurrent" class="inline-block px-3 py-1 rounded-full text-sm border bg-gray-100 text-gray-800"></span>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Move to Stage *</label>
+                    <select id="stageModalNext" class="w-full px-3 py-2 border rounded-lg"></select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Notes (optional)</label>
+                    <textarea id="stageModalNotes" rows="2" class="w-full px-3 py-2 border rounded-lg text-sm"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Your Personal PIN *</label>
+                    <input type="password" id="stageModalPIN" placeholder="Enter your assigned PIN" class="w-full px-3 py-2 border rounded-lg">
+                    <div id="stagePINError" class="hidden text-xs text-red-500 mt-1">Incorrect PIN or your role is not authorized for this stage.</div>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-3 text-xs">
+                    <div class="font-semibold text-gray-600 mb-2 uppercase tracking-wide">Role Permissions</div>
+                    <div id="stageRoleHints"></div>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="closeStageModal()" class="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
+                <button onclick="confirmStageUpdate()" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">Confirm Update</button>
+            </div>
+        </div>
     </div>
 
-    <!-- ADD MODAL -->
+    <!-- QR SLIP MODAL -->
+    <div id="qrModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg max-w-sm w-full p-6">
+            <h2 class="text-xl font-bold mb-1 text-indigo-700">&#9632; Transaction QR Slip</h2>
+            <p id="qrModalRef" class="text-sm text-gray-500 mb-4"></p>
+            <div class="text-center mb-4">
+                <div class="bg-indigo-50 rounded-lg p-4 inline-block">
+                    <img id="qrImage" src="" alt="QR Code" class="w-48 h-48"/>
+                </div>
+            </div>
+            <div id="qrDetails" class="text-sm space-y-1 mb-4"></div>
+            <div class="flex gap-3">
+                <button onclick="document.getElementById('qrModal').classList.add('hidden')" class="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50">Close</button>
+                <button onclick="printQRSlip()" class="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">&#128424; Print Slip</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- VISITOR / BOOKING MODAL -->
+    <div id="visitorModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg max-w-md w-full p-6 max-h-screen overflow-y-auto">
+            <h2 class="text-xl font-bold mb-3">Register Visitor / Appointment</h2>
+            <div class="flex gap-2 flex-wrap mb-4" id="visitTypeBtns">
+                <button onclick="setVisitType('Walk-in')" id="vtype-Walk-in" class="px-3 py-1.5 rounded-full text-sm font-medium bg-orange-500 text-white">&#128694; Walk-in</button>
+                <button onclick="setVisitType('Booked')" id="vtype-Booked" class="px-3 py-1.5 rounded-full text-sm font-medium bg-white border text-gray-600">&#128197; Booked</button>
+                <button onclick="setVisitType('Complaint')" id="vtype-Complaint" class="px-3 py-1.5 rounded-full text-sm font-medium bg-white border text-gray-600">&#9888; Complaint</button>
+                <button onclick="setVisitType('Assistance')" id="vtype-Assistance" class="px-3 py-1.5 rounded-full text-sm font-medium bg-white border text-gray-600">&#128172; Assistance</button>
+                <button onclick="setVisitType('Follow-up')" id="vtype-Follow-up" class="px-3 py-1.5 rounded-full text-sm font-medium bg-white border text-gray-600">&#128279; Follow-up</button>
+            </div>
+            <div class="space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="block text-xs font-semibold mb-1 uppercase text-gray-500">Visitor Name *</label><input type="text" id="v-name" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                    <div><label class="block text-xs font-semibold mb-1 uppercase text-gray-500">Contact No.</label><input type="text" id="v-tel" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                </div>
+                <div id="v-ent-wrap"><label class="block text-xs font-semibold mb-1 uppercase text-gray-500">Entity / Company</label><input type="text" id="v-ent" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                <div id="v-datetime-wrap">
+                    <div class="grid grid-cols-2 gap-3" id="v-booked-fields" style="display:none">
+                        <div><label class="block text-xs font-semibold mb-1 uppercase text-gray-500">Preferred Date *</label><input type="date" id="v-date" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                        <div><label class="block text-xs font-semibold mb-1 uppercase text-gray-500">Time Slot *</label>
+                            <select id="v-time" class="w-full px-3 py-2 border rounded-lg text-sm">
+                                <option>8:00 AM</option><option>8:30 AM</option><option>9:00 AM</option><option>9:30 AM</option>
+                                <option>10:00 AM</option><option>10:30 AM</option><option>11:00 AM</option><option>11:30 AM</option>
+                                <option>1:00 PM</option><option>1:30 PM</option><option>2:00 PM</option><option>2:30 PM</option>
+                                <option>3:00 PM</option><option>3:30 PM</option><option>4:00 PM</option><option>4:30 PM</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div><label class="block text-xs font-semibold mb-1 uppercase text-gray-500">Meet With *</label>
+                    <select id="v-meet" class="w-full px-3 py-2 border rounded-lg text-sm">
+                        <option value="">— Select personnel —</option>
+                        <option>RD (Regional Director)</option>
+                        <option>Legal Officer</option>
+                        <option>Technical Division Chief</option>
+                        <option>Admin Division Chief</option>
+                    </select>
+                </div>
+                <div id="v-complaint-fields" style="display:none" class="bg-orange-50 border border-orange-200 rounded-lg p-3 space-y-2">
+                    <div class="text-xs font-bold text-orange-700 uppercase">Complaint Details</div>
+                    <input type="text" id="v-cop" placeholder="Operator / Driver name" class="w-full px-3 py-2 border rounded-lg text-sm">
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" id="v-route" placeholder="Route" class="px-3 py-2 border rounded-lg text-sm">
+                        <input type="text" id="v-plate" placeholder="Plate No." class="px-3 py-2 border rounded-lg text-sm">
+                    </div>
+                    <textarea id="v-nature" rows="2" placeholder="Nature of complaint…" class="w-full px-3 py-2 border rounded-lg text-sm resize-none"></textarea>
+                </div>
+                <div id="v-followup-fields" style="display:none">
+                    <label class="block text-xs font-semibold mb-1 uppercase text-gray-500">Linked Transaction</label>
+                    <select id="v-txn" class="w-full px-3 py-2 border rounded-lg text-sm">
+                        <option value="">— Select transaction (optional) —</option>
+                    </select>
+                </div>
+                <div><label class="block text-xs font-semibold mb-1 uppercase text-gray-500">Notes</label><textarea id="v-notes" rows="2" class="w-full px-3 py-2 border rounded-lg text-sm resize-none"></textarea></div>
+            </div>
+            <div class="flex gap-3 mt-5">
+                <button onclick="closeVisitorForm()" class="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
+                <button onclick="saveVisitor()" class="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">Register</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SETTINGS MODAL -->
+    <div id="settingsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg max-w-lg w-full max-h-screen overflow-y-auto">
+            <div class="bg-gray-700 text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
+                <div class="font-semibold text-lg">&#9881; Personnel Roster &amp; Role Settings</div>
+                <button onclick="closeSettings()" class="text-gray-300 hover:text-white text-2xl leading-none">&times;</button>
+            </div>
+            <div id="settingsVerifyPanel" class="p-6">
+                <p class="text-gray-600 text-sm mb-4">Enter Admin PIN to manage personnel and role assignments.</p>
+                <input type="password" id="settingsAdminPIN" placeholder="Admin PIN" class="w-full px-3 py-2 border rounded-lg mb-2">
+                <div id="settingsPINErr" class="hidden text-xs text-red-500 mb-2">Incorrect Admin PIN.</div>
+                <div class="flex gap-3">
+                    <button onclick="closeSettings()" class="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
+                    <button onclick="verifySettingsPIN()" class="flex-1 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800 font-medium">Verify</button>
+                </div>
+            </div>
+            <div id="settingsPanel" class="hidden p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <div class="font-semibold text-gray-700">Personnel Roster (<span id="rosterCount">0</span>)</div>
+                    <button onclick="showAddPersonnel()" class="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-sm hover:bg-blue-700">+ Add Personnel</button>
+                </div>
+                <div id="addPersonnelForm" class="hidden bg-blue-50 rounded-lg p-4 mb-4 space-y-3">
+                    <div class="font-semibold text-sm text-blue-700">New Personnel</div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><label class="text-xs font-semibold text-gray-500">Full Name *</label><input type="text" id="np-name" class="w-full px-3 py-2 border rounded-lg text-sm mt-1"></div>
+                        <div><label class="text-xs font-semibold text-gray-500">Personal PIN *</label><input type="password" id="np-pin" maxlength="8" class="w-full px-3 py-2 border rounded-lg text-sm mt-1"></div>
+                    </div>
+                    <div><label class="text-xs font-semibold text-gray-500">Assign Role *</label>
+                        <select id="np-role" class="w-full px-3 py-2 border rounded-lg text-sm mt-1">
+                            <option value="Receiving">Receiving Staff</option>
+                            <option value="Cashier">Cashier</option>
+                            <option value="Processor">Technical / Legal / Admin Processor</option>
+                            <option value="Approver">RD Approver</option>
+                            <option value="Releasing">Releasing Staff</option>
+                            <option value="Admin">Administrator</option>
+                        </select>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="cancelAddPersonnel()" class="flex-1 px-3 py-2 border rounded-lg text-sm hover:bg-gray-50">Cancel</button>
+                        <button onclick="savePersonnel()" class="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">Add to Roster</button>
+                    </div>
+                </div>
+                <div id="rosterList" class="divide-y border rounded-lg overflow-hidden"></div>
+                <div class="mt-6 bg-gray-50 rounded-lg p-4">
+                    <div class="text-xs font-bold text-gray-600 uppercase mb-3">Role Stage Permissions</div>
+                    <div id="rolePermissions"></div>
+                </div>
+            </div>
+        </div>
+    </div>
     <div id="addModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-lg max-w-md w-full p-6 max-h-screen overflow-y-auto">
             <h2 class="text-2xl font-bold mb-4">New Transaction</h2>
@@ -181,11 +398,20 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1">Entity / Company Name</label>
-                    <input type="text" id="entityName" placeholder="e.g. ABC Corporation" class="w-full px-3 py-2 border rounded-lg">
+                    <div class="relative" id="entityWrap">
+                        <input type="text" id="entityName" placeholder="Type to search registered entities…" autocomplete="off" class="w-full px-3 py-2 border rounded-lg" oninput="onEntityInput(this.value,'entityName','entityAC')" onblur="setTimeout(()=>hideAC('entityAC'),200)">
+                        <div id="entityAC" class="ac-dropdown hidden"></div>
+                    </div>
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1">Request Type *</label>
-                    <input type="text" id="requestType" class="w-full px-3 py-2 border rounded-lg">
+                    <select id="requestType" class="w-full px-3 py-2 border rounded-lg" onchange="onServiceSelect(this.value,'feeInfo')">
+                        <option value="">— Select from 110 LTFRB service types —</option>
+                    </select>
+                    <div id="feeInfo" class="fee-info">
+                        <div class="flex gap-2 mb-1"><span class="font-semibold text-green-700 w-32 shrink-0">Estimated Fee:</span><span id="feeInfoFee" class="text-green-800"></span></div>
+                        <div class="flex gap-2"><span class="font-semibold text-green-700 w-32 shrink-0">Processing Time:</span><span id="feeInfoTime" class="text-green-800"></span></div>
+                    </div>
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1">Contact Number</label>
@@ -250,11 +476,20 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1">Entity / Company Name</label>
-                    <input type="text" id="editEntityName" class="w-full px-3 py-2 border rounded-lg">
+                    <div class="relative">
+                        <input type="text" id="editEntityName" autocomplete="off" class="w-full px-3 py-2 border rounded-lg" oninput="onEntityInput(this.value,'editEntityName','editEntityAC')" onblur="setTimeout(()=>hideAC('editEntityAC'),200)">
+                        <div id="editEntityAC" class="ac-dropdown hidden"></div>
+                    </div>
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1">Request Type *</label>
-                    <input type="text" id="editRequestType" class="w-full px-3 py-2 border rounded-lg">
+                    <select id="editRequestType" class="w-full px-3 py-2 border rounded-lg" onchange="onServiceSelect(this.value,'editFeeInfo')">
+                        <option value="">— Select service type —</option>
+                    </select>
+                    <div id="editFeeInfo" class="fee-info">
+                        <div class="flex gap-2 mb-1"><span class="font-semibold text-green-700 w-32 shrink-0">Estimated Fee:</span><span id="editFeeInfoFee" class="text-green-800"></span></div>
+                        <div class="flex gap-2"><span class="font-semibold text-green-700 w-32 shrink-0">Processing Time:</span><span id="editFeeInfoTime" class="text-green-800"></span></div>
+                    </div>
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1">Contact Number</label>
@@ -321,13 +556,163 @@
         RD_APPROVAL: 'Awaiting RD Approval',
         DECISION_PREPARED: 'Decision Prepared',
         RELEASED: 'Decision Released',
-        COMPLETED: 'Completed'
+        COMPLETED: 'Completed',
+        QR_PRINTED: 'QR Code Printed'
     };
+
+    const ROLE_DEFS = {
+        Receiving:  { label:'Receiving Staff',              color:'#1565c0', stages:['Request Prepared','Submitted','Checklisting','Pre-acceptance Review','Incomplete - Awaiting Documents','Not Accepted'] },
+        Cashier:    { label:'Cashier',                      color:'#1b5e20', stages:['Assessment','Payment Pending','Payment Completed'] },
+        Processor:  { label:'Technical / Legal / Admin',    color:'#4527a0', stages:['Technical Processing','Legal Processing','Administrative Processing','Hearing Scheduled'] },
+        Approver:   { label:'RD Approver',                  color:'#e65100', stages:['Awaiting RD Approval','Decision Prepared'] },
+        Releasing:  { label:'Releasing Staff',              color:'#006064', stages:['Decision Released','Completed','QR Code Printed'] },
+        Admin:      { label:'Administrator',                color:'#b71c1c', stages:'ALL' }
+    };
+
+    const ENTITY_MASTER = [
+        'Dela Cruz Transport Cooperative','Mindanao Star Bus Lines','Villanueva Jeepney Operators Assoc.',
+        'Lanao del Norte Transport Corp.','South Cotabato Unified Transport','Tagalog & Sons Transport Inc.',
+        'SOCCSKSARGEN Transport Network','Sultan Kudarat Bus Lines','General Santos City Operators Assoc.',
+        'Koronadal Unified Jeepney Operators','Sarangani Transport Cooperative',
+        'Cotabato City Bus Operators Assoc.','Lake Sebu Transport Cooperative',
+        "T'boli Multipurpose Transport Coop",'Marbel Transport Services Inc.',
+        'Polomolok Jeepney Operators Assoc.','Isulan Transport Network Corp.',
+        'BARMM Transport Cooperative Alliance','Davao-GenSan Express Lines',
+        'Region XII Tricycle Operators Fed.'
+    ];
+
+    const TXN_LIST = [
+        {no:1,name:"REQUEST FOR CERTIFIED TRUE COPY (CENTRAL OFFICE)",fee:"PHP 53.00 / PHP 50.00",time:"1 Working Day, 7 Hours"},
+        {no:2,name:"REQUEST TO SURRENDER OF PLATE/S OF UNIT/S (CENTRAL OFFICE)",fee:"No Fee",time:"5 Hours"},
+        {no:3,name:"NOTICE FOR CHANGE OF NAME DUE TO CHANGE OF CIVIL STATUS (CENTRAL OFFICE)",fee:"No Fee",time:"1 Working Day"},
+        {no:4,name:"ISSUANCE OF PAYMENT ORDER SLIP FOR LIQUIDATED DAMAGES DUE TO DELAY OF SERVICES (CENTRAL OFFICE)",fee:"Formula-based (per case)",time:"2 Hours"},
+        {no:5,name:"NOTICE FOR CORRECTION OF TYPOGRAPHICAL ERRORS IN THE DECISION (CENTRAL OFFICE)",fee:"PHP 300.00",time:"1 Working Day"},
+        {no:6,name:"NOTICE OF CHANGE ENGINE (CENTRAL OFFICE)",fee:"PHP 300.00",time:"1 Working Day"},
+        {no:7,name:"REQUEST FOR SPECIAL TRIP FOR SPECIAL OCCASIONS (CENTRAL OFFICE)",fee:"PHP 170.00",time:"1 Working Day, 1 Hour"},
+        {no:8,name:"REQUEST FOR INSPECTION, TESTING, SEALING/RESEALING OF TAXI UNIT/S",fee:"PHP 300.00",time:"7 Hours"},
+        {no:9,name:"PETITION FOR DROPPING OF UNIT/S (CENTRAL OFFICE)",fee:"PHP 350.00",time:"18 Working Days"},
+        {no:10,name:"ISSUANCE OF PAYMENT ORDER SLIP FOR NOTICE OF DISALLOWANCE (CENTRAL OFFICE)",fee:"Formula-based (per case)",time:"Per document"},
+        {no:11,name:"CONFIRMATION OF UNITS AND ISSUANCE OF CERTIFICATE OF CONFIRMATION STICKER (CENTRAL OFFICE)",fee:"PHP 240.00",time:"4 Working Days"},
+        {no:12,name:"PETITION FOR AUTHORITY TO INSTALL ADVERTISING SIGNS ON AUTHORIZED UNIT/S (CENTRAL OFFICE)",fee:"PHP 10,000.00+",time:"18 Working Days"},
+        {no:13,name:"REQUEST FOR ISSUANCE OF CLEARANCE OF ACCOUNTS (CENTRAL OFFICE)",fee:"PHP 90.00",time:"4 Working Days"},
+        {no:14,name:"PETITION FOR SPECIAL PERMIT DURING SPECIAL HOLIDAYS (CENTRAL OFFICE)",fee:"PHP 300.00",time:"16 Working Days"},
+        {no:15,name:"PETITION FOR DROPPING AND SUBSTITUTION OF UNIT/S (CENTRAL OFFICE)",fee:"PHP 350.00",time:"18 Working Days"},
+        {no:16,name:"PETITION TO WITHDRAW APPLICATION (CENTRAL OFFICE)",fee:"PHP 260.00",time:"18 Working Days"},
+        {no:17,name:"PETITION FOR ADOPTION OF TRADE NAME (RFRO)",fee:"PHP 300.00",time:"11 Working Days, 1 Hour"},
+        {no:18,name:"PETITION FOR ADOPTION OF TRADE NAME (CENTRAL OFFICE)",fee:"PHP 300.00",time:"18 Working Days"},
+        {no:19,name:"PETITION FOR CANCELLATION OF FRANCHISE / UNIT (CENTRAL OFFICE)",fee:"PHP 300.00",time:"18 Working Days"},
+        {no:20,name:"PETITION FOR CHANGE OF VENUE OF LTO REGISTRATION (CENTRAL OFFICE)",fee:"PHP 300.00",time:"18 Working Days"},
+        {no:21,name:"PETITION FOR INTERCHANGE OF UNIT/S (CENTRAL OFFICE)",fee:"PHP 310.00",time:"20 Working Days"},
+        {no:22,name:"PETITION FOR ADOPTION OF COLOR SCHEME (CENTRAL OFFICE)",fee:"PHP 100.00",time:"21 Working Days, 7 Hours"},
+        {no:23,name:"MODIFICATION OF ROUTE (CHANGE BASE OF OPERATION) CENTRAL OFFICE",fee:"PHP 600.00",time:"40 Working Days, 4 Hours"},
+        {no:24,name:"ISSUANCE OF A NEW CERTIFICATE OF PUBLIC CONVENIENCE (CPC) - CENTRAL OFFICE",fee:"PHP 1,500.00+",time:"44 Working Days, 3 Hours"},
+        {no:25,name:"CONSOLIDATION OF CASES (CENTRAL OFFICE)",fee:"PHP 1,020.00",time:"48 Working Days, 4 Hours"},
+        {no:26,name:"PETITION FOR REGISTRATION IN-LIEU OF AUTHORIZED UNIT/S (CENTRAL OFFICE)",fee:"PHP 310.00",time:"18 Working Days"},
+        {no:27,name:"ISSUANCE OF A NEW CPC FOR TRANSPORTATION NETWORK VEHICLE SERVICE (TNVS) (CENTRAL OFFICE)",fee:"PHP 600.00+",time:"50 Working Days"},
+        {no:28,name:"REQUEST FOR FRANCHISE VERIFICATION (RFRO)",fee:"PHP 40.00",time:"3 Hours"},
+        {no:29,name:"RELEASING OF DECISIONS/ORDERS (RFRO)",fee:"No Fee",time:"Per document"},
+        {no:30,name:"CONFIRMATION OF UNITS AND ISSUANCE OF CERTIFICATE OF CONFIRMATION STICKER (RFRO)",fee:"PHP 240.00",time:"4 Working Days, 6 Hours"},
+        {no:31,name:"REQUEST FOR INSPECTION OF TERMINAL (CENTRAL OFFICE)",fee:"PHP 1,300.00+",time:"12 Working Days, 5 Hours"},
+        {no:32,name:"REQUEST FOR INSPECTION OF TERMINAL (RFRO)",fee:"PHP 1,300.00+",time:"12 Working Days, 5 Hours"},
+        {no:33,name:"REQUEST FOR CERTIFIED TRUE COPY (RFRO)",fee:"No Fee",time:"1 Working Day, 7 Hours"},
+        {no:34,name:"NOTICE FOR CORRECTION OF TYPOGRAPHICAL ERRORS IN THE DECISION (RFRO)",fee:"PHP 300.00",time:"1 Working Day"},
+        {no:35,name:"NOTICE OF CHANGE ENGINE (RFRO)",fee:"PHP 50.00 per unit",time:"1 Working Day"},
+        {no:36,name:"REQUEST FOR SPECIAL TRIP FOR SPECIAL OCCASIONS (RFRO)",fee:"PHP 170.00",time:"4 Hours"},
+        {no:37,name:"ISSUANCE OF PROVISIONAL AUTHORITY (CENTRAL OFFICE)",fee:"PHP 350.00",time:"12 Working Days, 5 Hours"},
+        {no:38,name:"ENLISTMENT FOR DRIVER'S ACADEMY (CENTRAL OFFICE)",fee:"PHP 40.00",time:"7 Hours"},
+        {no:39,name:"ENLISTMENT FOR DRIVER'S ACADEMY (RFRO)",fee:"PHP 40.00",time:"4 Working Days, 2 Hours"},
+        {no:40,name:"REQUEST FOR ACCREDITATION OF TAXI METER PROVIDER (CENTRAL OFFICE)",fee:"PHP 5,500.00",time:"19 Working Days, 7 Hours"},
+        {no:41,name:"REQUEST FOR CERTIFICATION OF FRANCHISE RECORDS (CENTRAL OFFICE)",fee:"PHP 50.00",time:"5 Hours"},
+        {no:42,name:"CHANGE OF PARTY APPLICANT (RFRO)",fee:"PHP 570.00",time:"45 Working Days, 3 Hours"},
+        {no:43,name:"PETITION FOR FARE ADJUSTMENT (CENTRAL OFFICE)",fee:"PHP 570.00+",time:"65 Working Days, 3 Hours"},
+        {no:44,name:"ISSUANCE OF ALTERNATIVE CERTIFICATE (CENTRAL OFFICE)",fee:"No Fee",time:"23 Working Days, 3 Hours"},
+        {no:45,name:"REQUEST FOR FRANCHISE VERIFICATION (RFRO NCR)",fee:"PHP 40.00",time:"2 Hours"},
+        {no:46,name:"REQUEST FOR INSPECTION OF GARAGE (CENTRAL OFFICE)",fee:"PHP 240.00",time:"10 Working Days, 6 Hours"},
+        {no:47,name:"REQUEST FOR INSPECTION OF GARAGE (RFRO)",fee:"PHP 1,140.00+",time:"3 Working Days, 2 Hours"},
+        {no:48,name:"ACCREDITATION OF TRANSPORTATION NETWORK COMPANY (CENTRAL OFFICE)",fee:"PHP 10,000.00",time:"18 Working Days, 4 Hours"},
+        {no:49,name:"MODIFICATION OF ROUTE (CHANGE BASE OF OPERATION) - (RFRO)",fee:"PHP 600.00",time:"46 Working Days, 6 Hours"},
+        {no:50,name:"PETITION FOR DROPPING AND SUBSTITUTION OF UNIT/S WITH PENDING APPLICATION FOR CONSOLIDATION (CENTRAL OFFICE)",fee:"PHP 310.00",time:"14 Working Days"},
+        {no:51,name:"REQUEST FOR CERTIFICATION OF FRANCHISE RECORDS (RFRO)",fee:"PHP 50.00",time:"5 Hours"},
+        {no:52,name:"PETITION FOR RE-REGISTRATION/REINSTATEMENT OF UNIT/S (CENTRAL OFFICE)",fee:"PHP 100.00",time:"11 Working Days, 1 Hour"},
+        {no:53,name:"PETITION FOR FARE ADJUSTMENT (RFRO)",fee:"PHP 570.00+",time:"66 Working Days, 4 Hours"},
+        {no:54,name:"ISSUANCE OF PROVISIONAL AUTHORITY (RFRO)",fee:"PHP 300.00",time:"7 Working Days, 5 Hours"},
+        {no:55,name:"REQUEST FOR ISSUANCE OF CLEARANCE OF ACCOUNTS (RFRO)",fee:"PHP 90.00",time:"4 Working Days"},
+        {no:56,name:"FILING OF MOTIONS (RFRO)",fee:"PHP 260.00",time:"40 Working Days"},
+        {no:57,name:"PETITION FOR REGISTRATION IN-LIEU OF AUTHORIZED UNIT/S (RFRO)",fee:"PHP 310.00",time:"11 Working Days, 1 Hour"},
+        {no:58,name:"PETITION FOR AUTHORITY TO INSTALL ADVERTISING SIGNS ON AUTHORIZED UNIT/S (RFRO)",fee:"PHP 10,200.00+",time:"11 Working Days, 1 Hour"},
+        {no:59,name:"CONTEST/OPPOSITION TO APPLICATIONS, COMPLAINTS AND OTHER CASES - BOARD EN BANC (CENTRAL OFFICE)",fee:"No Fee",time:"130 Working Days, 4 Hours"},
+        {no:60,name:"PREPARATION FOR PAYMENT FOR GENERAL SERVICES (CENTRAL OFFICE)",fee:"No Fee",time:"10 Working Days, 6 Hours"},
+        {no:61,name:"PREPARATION FOR PAYMENT FOR LOT PURCHASE (CENTRAL OFFICE)",fee:"No Fee",time:"14 Working Days"},
+        {no:62,name:"PREPARATION FOR PAYMENT FOR GENERAL SERVICES - (RFRO)",fee:"No Fee",time:"10 Working Days, 6 Hours"},
+        {no:63,name:"PREPARATION FOR PAYMENT FOR LOT PURCHASE (RFRO)",fee:"No Fee",time:"14 Working Days"},
+        {no:64,name:"ACCREDITATION OF GLOBAL NAVIGATION SATELLITE SYSTEM (GNSS) PROVIDERS - CENTRAL OFFICE",fee:"PHP 10,000.00",time:"18 Working Days, 4 Hours"},
+        {no:65,name:"PETITION FOR RE-REGISTRATION/REINSTATEMENT OF UNIT/S (RFRO)",fee:"PHP 100.00",time:"11 Working Days, 1 Hour"},
+        {no:66,name:"OPENING OF QUALIFICATION DOCUMENTS - OMNIBUS FRANCHISING GUIDELINES & PUVMP (CENTRAL OFFICE)",fee:"PHP 760.00+",time:"18 Working Days, 5 Hours"},
+        {no:67,name:"OPENING OF QUALIFICATION DOCUMENTS - OMNIBUS FRANCHISING GUIDELINES & PUVMP (RFRO)",fee:"PHP 760.00+",time:"16 Working Days, 5 Hours"},
+        {no:68,name:"PREPARATION FOR PAYMENT OF INFRASTRUCTURE PROJECT (CENTRAL OFFICE)",fee:"No Fee",time:"14 Working Days"},
+        {no:69,name:"OPENING OF QUALIFICATION DOCUMENTS OF PROPOSED PREMIUM POINT-TO-POINT BUS SERVICES (CENTRAL OFFICE)",fee:"PHP 286.00",time:"18 Working Days, 5 Hours"},
+        {no:70,name:"CHANGE OF NAME (CORPORATION, PARTNERSHIP, COOPERATIVE) (CENTRAL OFFICE)",fee:"PHP 560.00",time:"43 Working Days, 6 Hours"},
+        {no:71,name:"CHANGE OF NAME (CORPORATION, PARTNERSHIP, COOPERATIVE) - (RFRO)",fee:"PHP 560.00",time:"46 Working Days, 7 Hours"},
+        {no:72,name:"PETITION TO WITHDRAW APPLICATION (RFRO)",fee:"PHP 260.00",time:"11 Working Days, 1 Hour"},
+        {no:73,name:"NOTICE FOR CHANGE OF NAME DUE TO CHANGE OF CIVIL STATUS (RFRO)",fee:"PHP 300.00",time:"1 Working Day"},
+        {no:74,name:"PETITION FOR CANCELLATION OF FRANCHISE / UNIT (RFRO)",fee:"PHP 310.00",time:"11 Working Days, 1 Hour"},
+        {no:75,name:"PREPARATION OF PAYMENT FOR SUPPLIES THROUGH PUBLIC BIDDING (CENTRAL OFFICE)",fee:"No Fee",time:"12 Working Days, 7 Hours"},
+        {no:76,name:"PREPARATION OF PAYMENT FOR SUPPLIES THROUGH PUBLIC BIDDING (RFRO)",fee:"No Fee",time:"13 Working Days"},
+        {no:77,name:"PETITION FOR INTERCHANGE OF UNIT/S (RFRO)",fee:"PHP 310.00",time:"17 Working Days"},
+        {no:78,name:"CONTEST/OPPOSITION TO APPLICATIONS (RFRO)",fee:"No Fee",time:"139 Working Days, 5 Hours"},
+        {no:79,name:"ACCREDITATION OF TRANSPORTATION NETWORK COMPANY (RFRO)",fee:"PHP 10,000.00",time:"18 Working Days, 4 Hours"},
+        {no:80,name:"REQUEST FOR INSPECTION, TESTING, SEALING/RESEALING OF TAXI UNIT/S (RFRO)",fee:"PHP 125.00",time:"7 Hours"},
+        {no:81,name:"PETITION FOR UPGRADING AND DOWNGRADING OF UNIT/S (NON-AIRCON TO AIRCON AND VICE VERSA) (CENTRAL OFFICE)",fee:"PHP 570.00",time:"17 Working Days, 1 Hour"},
+        {no:82,name:"PETITION FOR UPGRADING AND DOWNGRADING OF UNIT/S (NON-AIRCON TO AIRCON AND VICE VERSA) (RFRO)",fee:"PHP 570.00",time:"11 Working Days, 1 Hour"},
+        {no:83,name:"PETITION FOR SPECIAL PERMIT IN THE INTERIM (CENTRAL OFFICE)",fee:"PHP 286.00",time:"18 Working Days"},
+        {no:84,name:"PETITION FOR SPECIAL PERMIT IN THE INTERIM - (RFRO)",fee:"PHP 286.00",time:"11 Working Days, 1 Hour"},
+        {no:85,name:"REQUEST TO SURRENDER OF PLATE/S OF UNIT/S (RFRO)",fee:"No Fee",time:"5 Hours"},
+        {no:86,name:"ISSUANCE OF PAYMENT ORDER SLIP FOR LIQUIDATED DAMAGES DUE TO DELAY OF SERVICES (RFRO)",fee:"No Fee",time:"2 Hours"},
+        {no:87,name:"FILING OF MOTIONS (CENTRAL OFFICE)",fee:"PHP 286.00",time:"40 Working Days, 5 Hours"},
+        {no:88,name:"ADJUDICATION OF APPREHENDED VEHICLES WITH FRANCHISE VIOLATION/S (FOR CONTESTED APPREHENSIONS) - CENTRAL OFFICE",fee:"No Fee",time:"63 Working Days, 1 Hour"},
+        {no:89,name:"REQUEST FOR INSPECTION OF UNIT/S (CENTRAL OFFICE)",fee:"PHP 250.00+",time:"12 Working Days, 5 Hours"},
+        {no:90,name:"OPENING OF QUALIFICATION DOCUMENTS OF PROPOSED PREMIUM POINT-TO-POINT BUS SERVICES (RFRO)",fee:"PHP 520.00+",time:"16 Working Days, 5 Hours"},
+        {no:91,name:"PETITION FOR CHANGE OF VENUE OF LTO REGISTRATION (RFRO)",fee:"PHP 300.00",time:"11 Working Days, 1 Hour"},
+        {no:92,name:"ISSUANCE OF PAYMENT ORDER SLIP FOR NOTICE OF DISALLOWANCE (RFRO)",fee:"No Fee",time:"Per document"},
+        {no:93,name:"REQUEST FOR INSPECTION OF UNIT/S (RFRO)",fee:"PHP 250.00+",time:"12 Working Days, 5 Hours"},
+        {no:94,name:"PETITION FOR SPECIAL PERMIT DURING SPECIAL HOLIDAYS / ISSUANCE OF PROVISIONAL AUTHORITY (RFRO)",fee:"PHP 300.00",time:"11 Working Days"},
+        {no:95,name:"EXTENSION OF VALIDITY OF CERTIFICATE OF PUBLIC CONVENIENCE (CENTRAL OFFICE)",fee:"PHP 20,000.00 – PHP 50,000.00+",time:"43 Working Days"},
+        {no:96,name:"PETITION FOR DROPPING OF UNIT/S (RFRO)",fee:"PHP 350.00",time:"15 Working Days"},
+        {no:97,name:"PETITION FOR STORAGE OF UNIT'S PLATE (CENTRAL OFFICE)",fee:"PHP 500.00+",time:"18 Working Days"},
+        {no:98,name:"EXTENSION OF VALIDITY OF CERTIFICATE OF PUBLIC CONVENIENCE - RFRO",fee:"PHP 20,000.00 – PHP 50,000.00+",time:"46 Working Days, 7 Hours"},
+        {no:99,name:"PETITION FOR DROPPING AND SUBSTITUTION OF UNIT/S (RFRO)",fee:"PHP 350.00",time:"11 Working Days, 1 Hour"},
+        {no:100,name:"PREPARATION FOR PAYMENT OF INFRASTRUCTURE PROJECT (RFRO)",fee:"No Fee",time:"14 Working Days"},
+        {no:101,name:"PETITION FOR STORAGE OF UNIT'S PLATE (RFRO)",fee:"PHP 500.00+",time:"18 Working Days"},
+        {no:102,name:"CHANGE OF PARTY APPLICANT (CENTRAL OFFICE)",fee:"PHP 524.00",time:"28 Working Days"},
+        {no:103,name:"PETITION FOR ADOPTION OF COLOR SCHEME (RFRO)",fee:"PHP 569.00",time:"19 Working Days, 7 Hours"},
+        {no:104,name:"CONSOLIDATION OF CASES (RFRO)",fee:"PHP 1,020.00",time:"46 Working Days, 3 Hours"},
+        {no:105,name:"RELEASING OF DECISIONS/ORDERS (CENTRAL OFFICE)",fee:"No Fee",time:"Per document"},
+        {no:106,name:"ISSUANCE OF A NEW CERTIFICATE OF PUBLIC CONVENIENCE (CPC) - RFRO",fee:"PHP 1,500.00+",time:"46 Working Days, 7 Hours"},
+        {no:107,name:"REQUEST FOR FRANCHISE VERIFICATION (CENTRAL OFFICE)",fee:"PHP 40.00",time:"3 Hours"},
+        {no:108,name:"ADJUDICATION OF APPREHENDED VEHICLES WITH FRANCHISE VIOLATION/S (FOR CONTESTED APPREHENSIONS) - RFRO",fee:"No Fee",time:"62 Working Days, 3 Hours"},
+        {no:109,name:"ISSUANCE OF A NEW CPC FOR TRANSPORTATION NETWORK VEHICLE SERVICE (TNVS) (RFRO)",fee:"PHP 570.00+",time:"46 Working Days, 1 Hour"},
+        {no:110,name:"PETITION FOR DROPPING AND SUBSTITUTION OF UNIT/S WITH PENDING APPLICATION FOR CONSOLIDATION (RFRO)",fee:"PHP 310.00+",time:"10 Working Days"}
+    ];
 
     const API = 'https://rfro12-api.chris-capistrano.workers.dev';
     let transactions = [];
+    let visitors = [];
     let selectedTransaction = null;
     let pendingPaymentStage = null;
+    let currentVisitType = 'Walk-in';
+    let currentVisitFilter = 'ALL';
+    let overdueVisible = false;
+    let qrPrintData = null;
+    let roster = JSON.parse(localStorage.getItem('rfro_roster') || 'null') || [
+        {id:'u1',name:'Maria Santos',role:'Receiving',pin:'1111',active:true},
+        {id:'u2',name:'Ben Cabrera',role:'Receiving',pin:'1122',active:true},
+        {id:'u3',name:'Ana Gomez',role:'Releasing',pin:'5511',active:true},
+        {id:'u4',name:'Lea Reyes',role:'Cashier',pin:'2211',active:true},
+        {id:'u5',name:'Engr. Jose Ramos',role:'Processor',pin:'3311',active:true},
+        {id:'u6',name:'Atty. Carmen Villar',role:'Processor',pin:'3322',active:true},
+        {id:'u7',name:'Dir. Ramon Reyes',role:'Approver',pin:'4411',active:true},
+        {id:'u8',name:'Admin Officer',role:'Admin',pin:'9999',active:true}
+    ];
 
     // ── AGING ────────────────────────────────────────────────────────
     function getStageAging(t) {
@@ -359,7 +744,7 @@
     }
 
     function isOverdue(t) {
-        if (t.stage === STAGES.COMPLETED || t.stage === STAGES.NOT_ACCEPTED) return false;
+        if (t.stage === STAGES.COMPLETED || t.stage === STAGES.NOT_ACCEPTED || t.stage === STAGES.QR_PRINTED) return false;
         return getCurrentStageHours(t) > 24;
     }
 
@@ -395,11 +780,24 @@
 
     // ── INIT ────────────────────────────────────────────────────────
     async function init() {
+        // Populate stage filter
         var select = document.getElementById('filterStage');
         Object.values(STAGES).forEach(function(stage) {
             var opt = document.createElement('option');
             opt.value = stage; opt.textContent = stage;
             select.appendChild(opt);
+        });
+        // Populate service request dropdowns (add + edit modals)
+        ['requestType','editRequestType'].forEach(function(id) {
+            var sel = document.getElementById(id);
+            TXN_LIST.forEach(function(t) {
+                var opt = document.createElement('option');
+                opt.value = t.name;
+                opt.dataset.fee = t.fee;
+                opt.dataset.time = t.time;
+                opt.textContent = t.no + '. ' + t.name;
+                sel.appendChild(opt);
+            });
         });
         document.getElementById('dateReceived').value = new Date().toISOString().split('T')[0];
         var now = new Date();
@@ -410,6 +808,8 @@
         document.getElementById('filterStage').addEventListener('change', renderTransactions);
         document.getElementById('applicantName').addEventListener('input', updateRefPreview);
         document.getElementById('dateReceived').addEventListener('change', updateRefPreview);
+        // Load visitors from localStorage
+        visitors = JSON.parse(localStorage.getItem('rfro_visitors') || '[]');
         await loadTransactions();
     }
 
@@ -455,21 +855,29 @@
     function showAddForm() { document.getElementById('addModal').classList.remove('hidden'); }
     function closeAddForm() {
         document.getElementById('addModal').classList.add('hidden');
-        ['applicantName','entityName','requestType','contactNumber','email'].forEach(function(id) {
+        ['applicantName','entityName','contactNumber','email'].forEach(function(id) {
             document.getElementById(id).value = '';
         });
+        document.getElementById('requestType').value = '';
+        document.getElementById('feeInfo').style.display = 'none';
+        document.getElementById('refPreview').textContent = '';
+        hideAC('entityAC');
     }
 
     async function addTransaction() {
         var name = document.getElementById('applicantName').value.trim();
-        var type = document.getElementById('requestType').value.trim();
+        var typeEl = document.getElementById('requestType');
+        var type = typeEl.value.trim();
         var date = document.getElementById('dateReceived').value;
         if (!name || !type || !date) { alert('Please fill required fields'); return; }
+        var selOpt = typeEl.options[typeEl.selectedIndex];
         var t = {
             id: Date.now().toString(),
             referenceNumber: generateRef(name, date),
             applicantName: name,
             requestType: type,
+            estimatedFee: selOpt ? selOpt.dataset.fee || '' : '',
+            estimatedTime: selOpt ? selOpt.dataset.time || '' : '',
             entityName: document.getElementById('entityName').value.trim(),
             contactNumber: document.getElementById('contactNumber').value.trim(),
             email: document.getElementById('email').value.trim(),
@@ -595,6 +1003,17 @@
         var nextStages = getNextStages(t.stage);
         var aging = getStageAging(t);
         var totalD = getTotalDays(t);
+        var isDone = (t.stage === STAGES.COMPLETED || t.stage === STAGES.QR_PRINTED);
+
+        // Fee / time info
+        var feeHTML = '';
+        if (t.estimatedFee || t.estimatedTime) {
+            feeHTML = '<div class="mb-4 bg-green-50 border border-green-200 rounded-lg p-3">'
+                + '<div class="text-xs font-bold text-green-700 mb-1 uppercase tracking-wide">&#128203; LTFRB Service Info</div>'
+                + (t.estimatedFee ? '<div class="text-sm"><span class="text-gray-500">Est. Fee:</span> <strong class="text-green-700">' + t.estimatedFee + '</strong></div>' : '')
+                + (t.estimatedTime ? '<div class="text-sm"><span class="text-gray-500">Processing Time:</span> ' + t.estimatedTime + '</div>' : '')
+                + '</div>';
+        }
 
         // Aging table
         var agingHTML = '<div class="mb-4 bg-gray-50 rounded-lg p-3 border">'
@@ -622,17 +1041,16 @@
                 + '</div>';
         }
 
-        // Stage update
+        // Stage update button → opens PIN modal
         var updateHTML = '';
-        if (nextStages.length > 0 && t.stage !== STAGES.COMPLETED && t.stage !== STAGES.NOT_ACCEPTED) {
-            updateHTML = '<button onclick="toggleStageUpdate()" class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 mb-3 text-sm font-medium">Update Stage</button>'
-                + '<div id="stageUpdate" style="display:none;" class="mb-4 p-3 bg-gray-50 rounded-lg border">'
-                + '<div class="text-xs font-semibold mb-2 text-gray-600 uppercase">Select next stage:</div>'
-                + nextStages.map(function(s) {
-                    return '<button onclick="updateStage(\'' + s.replace(/'/g, "\\'") + '\')" class="w-full text-left px-3 py-2 mb-2 bg-white border rounded hover:bg-blue-50 text-sm">' + s + '</button>';
-                }).join('')
-                + '<textarea id="stageNotes" placeholder="Notes (optional)" class="w-full px-3 py-2 border rounded text-sm mt-1" rows="2"></textarea>'
-                + '</div>';
+        if (nextStages.length > 0 && !isDone && t.stage !== STAGES.NOT_ACCEPTED) {
+            updateHTML = '<button onclick="openStageModal()" class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 mb-3 text-sm font-medium">&#128260; Update Stage</button>';
+        }
+
+        // QR button for completed
+        var qrHTML = '';
+        if (isDone) {
+            qrHTML = '<button onclick="openQRModal()" class="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 mb-3 text-sm font-medium">&#9632; View &amp; Print QR Slip</button>';
         }
 
         panel.innerHTML = '<div class="p-4">'
@@ -641,16 +1059,18 @@
             + '<button onclick="showEditForm()" class="flex-1 px-3 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 text-sm font-medium">&#9998; Edit</button>'
             + '<button onclick="showDeleteForm()" class="flex-1 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium">&#128465; Delete</button>'
             + '</div>'
-            + '<div class="space-y-1 text-sm mb-4 bg-white rounded-lg">'
+            + '<div class="space-y-1 text-sm mb-4">'
             + '<div><span class="text-gray-500">Date Received:</span> ' + new Date(t.dateReceived + 'T00:00:00').toLocaleDateString('en-PH') + '</div>'
-            + '<div><span class="text-gray-500">Request Type:</span> ' + t.requestType + '</div>'
+            + '<div><span class="text-gray-500">Request Type:</span> <span class="font-medium">' + t.requestType + '</span></div>'
             + (t.entityName ? '<div><span class="text-gray-500">Entity:</span> ' + t.entityName + '</div>' : '')
             + (t.contactNumber ? '<div><span class="text-gray-500">Contact:</span> ' + t.contactNumber + '</div>' : '')
             + (t.email ? '<div><span class="text-gray-500">Email:</span> ' + t.email + '</div>' : '')
             + '</div>'
+            + feeHTML
             + agingHTML
             + payHTML
             + updateHTML
+            + qrHTML
             + '<div><div class="text-sm font-semibold mb-2">History</div>'
             + t.history.slice().reverse().map(function(h) {
                 return '<div class="border-l-2 ' + (h.type === 'EDIT' ? 'border-yellow-400' : 'border-blue-400') + ' pl-3 mb-3">'
@@ -660,11 +1080,6 @@
                     + '</div>';
             }).join('')
             + '</div></div>';
-    }
-
-    function toggleStageUpdate() {
-        var el = document.getElementById('stageUpdate');
-        el.style.display = el.style.display === 'none' ? 'block' : 'none';
     }
 
     function getNextStages(stage) {
@@ -684,19 +1099,18 @@
         map[STAGES.RD_APPROVAL] = [STAGES.DECISION_PREPARED];
         map[STAGES.DECISION_PREPARED] = [STAGES.RELEASED];
         map[STAGES.RELEASED] = [STAGES.COMPLETED];
+        map[STAGES.COMPLETED] = [STAGES.QR_PRINTED];
         return map[stage] || [];
     }
 
-    async function updateStage(newStage) {
+    async function updateStage(newStage, byUser, notes) {
         if (newStage === STAGES.PAYMENT_COMPLETED) {
             showPaymentModal(newStage);
             return;
         }
-        var notesEl = document.getElementById('stageNotes');
-        var notes = notesEl ? notesEl.value : '';
         var t = transactions.find(function(tx) { return tx.id === selectedTransaction.id; });
         t.stage = newStage;
-        t.history.push({ stage: newStage, timestamp: new Date().toISOString(), notes: notes });
+        t.history.push({ stage: newStage, timestamp: new Date().toISOString(), notes: notes || '', by: byUser || '' });
         if ([STAGES.TECHNICAL, STAGES.LEGAL, STAGES.ADMINISTRATIVE].includes(newStage) && !t.processingType) {
             t.processingType = newStage.split(' ')[0];
         }
@@ -713,28 +1127,48 @@
         document.getElementById('editRefLabel').textContent = t.referenceNumber + ' — ' + t.applicantName;
         document.getElementById('editApplicantName').value = t.applicantName;
         document.getElementById('editEntityName').value = t.entityName || '';
-        document.getElementById('editRequestType').value = t.requestType;
+        // Set dropdown to match existing requestType
+        var sel = document.getElementById('editRequestType');
+        sel.value = t.requestType;
+        if (!sel.value) {
+            // value not in list — add a temporary option
+            var opt = document.createElement('option');
+            opt.value = t.requestType;
+            opt.textContent = t.requestType;
+            sel.insertBefore(opt, sel.options[1]);
+            sel.value = t.requestType;
+        }
+        // Show fee info if available
+        onServiceSelect(t.requestType, 'editFeeInfo');
         document.getElementById('editContactNumber').value = t.contactNumber || '';
         document.getElementById('editEmail').value = t.email || '';
         document.getElementById('editReason').value = '';
         document.getElementById('editModal').classList.remove('hidden');
     }
-    function closeEditForm() { document.getElementById('editModal').classList.add('hidden'); }
+    function closeEditForm() {
+        document.getElementById('editModal').classList.add('hidden');
+        document.getElementById('editFeeInfo').style.display = 'none';
+        hideAC('editEntityAC');
+    }
 
     async function saveEdit() {
         var reason = document.getElementById('editReason').value.trim();
         var name = document.getElementById('editApplicantName').value.trim();
-        var type = document.getElementById('editRequestType').value.trim();
+        var typeEl = document.getElementById('editRequestType');
+        var type = typeEl.value.trim();
         if (!name || !type) { alert('Name and Request Type are required.'); return; }
         if (!reason) { alert('Please provide a reason for the edit.'); return; }
         var t = transactions.find(function(tx) { return tx.id === selectedTransaction.id; });
         var changes = [];
         if (t.applicantName !== name) changes.push('Name: "' + t.applicantName + '" -> "' + name + '"');
         if ((t.entityName || '') !== document.getElementById('editEntityName').value.trim()) changes.push('Entity changed');
-        if (t.requestType !== type) changes.push('Type: "' + t.requestType + '" -> "' + type + '"');
+        if (t.requestType !== type) changes.push('Type changed');
+        var selOpt = typeEl.options[typeEl.selectedIndex];
         t.applicantName = name;
         t.entityName = document.getElementById('editEntityName').value.trim();
         t.requestType = type;
+        t.estimatedFee = selOpt ? selOpt.dataset.fee || t.estimatedFee || '' : t.estimatedFee || '';
+        t.estimatedTime = selOpt ? selOpt.dataset.time || t.estimatedTime || '' : t.estimatedTime || '';
         t.contactNumber = document.getElementById('editContactNumber').value.trim();
         t.email = document.getElementById('editEmail').value.trim();
         t.history.push({ stage: t.stage, type: 'EDIT', timestamp: new Date().toISOString(), notes: 'Edited at "' + t.stage + '". Reason: ' + reason + (changes.length ? '. ' + changes.join('; ') : '') });
@@ -777,7 +1211,7 @@
 
     // ── TAB SWITCHING ────────────────────────────────────────────────
     function switchTab(tab) {
-        ['dashboard','transactions','collections','report','monthly'].forEach(function(t) {
+        ['dashboard','transactions','visitors','collections','report','monthly'].forEach(function(t) {
             var btn = document.getElementById(t + 'Tab');
             if (btn) btn.className = tab === t
                 ? 'px-5 py-3 font-medium text-blue-600 border-b-2 border-blue-600'
@@ -788,6 +1222,7 @@
         if (tab === 'report') renderDailyReport();
         if (tab === 'monthly') renderMonthlyReport();
         if (tab === 'collections') renderCollections();
+        if (tab === 'visitors') renderVisitors();
     }
 
     // ── DASHBOARD ────────────────────────────────────────────────────
@@ -801,16 +1236,28 @@
         document.getElementById('rejectedCount').textContent = rejected;
         document.getElementById('pendingCount').textContent = pending;
 
-        // Overdue flagging
+        // Overdue flagging — collapsible panel
         var overdue = transactions.filter(function(t) { return isOverdue(t); });
+        var badge = document.getElementById('overdueCountBadge');
+        var chevron = document.getElementById('overdueChevron');
+        if (overdue.length) {
+            badge.textContent = overdue.length;
+            badge.classList.remove('hidden');
+            chevron.style.color = '#c2410c';
+        } else {
+            badge.classList.add('hidden');
+            chevron.style.color = '';
+        }
         var flagEl = document.getElementById('flaggedList');
         if (!overdue.length) {
             flagEl.innerHTML = '<span class="text-gray-400 text-sm">No overdue requests &#10003;</span>';
         } else {
             flagEl.innerHTML = overdue.map(function(t) {
-                return '<div class="flex justify-between text-sm">'
-                    + '<span class="font-semibold">' + t.referenceNumber + '</span>'
-                    + '<span class="text-xs ml-2">' + t.applicantName + ' &mdash; ' + formatAge(getCurrentStageHours(t)) + '</span>'
+                return '<div class="flex justify-between items-start text-sm py-1 border-b border-orange-100 last:border-0">'
+                    + '<div><div class="font-semibold text-orange-800">' + t.referenceNumber + '</div>'
+                    + '<div class="text-xs text-orange-700">' + t.applicantName + (t.entityName ? ' / ' + t.entityName : '') + '</div>'
+                    + '<div class="text-xs text-gray-500">' + t.stage + '</div></div>'
+                    + '<span class="text-xs font-bold text-red-600 shrink-0 ml-2">' + formatAge(getCurrentStageHours(t)) + ' &#9888;</span>'
                     + '</div>';
             }).join('');
         }
@@ -1146,6 +1593,456 @@
             + '\n\nRespectfully,\nRecords Officer, RFRO XIII';
 
         window.location.href = 'mailto:?subject=' + encodeURIComponent('Daily Report - RFRO XIII - ' + dateStr) + '&body=' + encodeURIComponent(body);
+    }
+
+    // ── OVERDUE TOGGLE ────────────────────────────────────────────────
+    function toggleOverdue() {
+        overdueVisible = !overdueVisible;
+        var panel = document.getElementById('overduePanel');
+        var chevron = document.getElementById('overdueChevron');
+        panel.classList.toggle('hidden', !overdueVisible);
+        chevron.textContent = overdueVisible ? '▲' : '▼';
+    }
+
+    // ── ENTITY AUTOCOMPLETE ───────────────────────────────────────────
+    function getEntitySuggestions(q) {
+        if (!q || q.length < 2) return [];
+        var lo = q.toLowerCase();
+        var fromTxs = transactions.map(function(t) { return t.entityName; }).filter(Boolean);
+        var all = Array.from(new Set(ENTITY_MASTER.concat(fromTxs)));
+        return all.filter(function(e) { return e.toLowerCase().includes(lo); }).slice(0, 8);
+    }
+
+    function onEntityInput(val, inputId, dropId) {
+        var sugg = getEntitySuggestions(val);
+        var drop = document.getElementById(dropId);
+        if (!sugg.length) { drop.classList.add('hidden'); return; }
+        drop.innerHTML = sugg.map(function(e) {
+            return '<div class="ac-item" onmousedown="pickEntity(\'' + e.replace(/'/g,"\\'") + '\',\'' + inputId + '\',\'' + dropId + '\')">'
+                + '&#128203; ' + e + '</div>';
+        }).join('');
+        drop.classList.remove('hidden');
+    }
+
+    function pickEntity(val, inputId, dropId) {
+        document.getElementById(inputId).value = val;
+        hideAC(dropId);
+    }
+
+    function hideAC(dropId) {
+        var el = document.getElementById(dropId);
+        if (el) el.classList.add('hidden');
+    }
+
+    // ── SERVICE DROPDOWN FEE INFO ─────────────────────────────────────
+    function onServiceSelect(val, infoId) {
+        var infoEl = document.getElementById(infoId);
+        if (!val) { infoEl.style.display = 'none'; return; }
+        var txn = TXN_LIST.find(function(t) { return t.name === val; });
+        if (!txn) { infoEl.style.display = 'none'; return; }
+        var feeId = infoId + 'Fee';
+        var timeId = infoId + 'Time';
+        var feeEl = document.getElementById(feeId);
+        var timeEl = document.getElementById(timeId);
+        if (feeEl) feeEl.textContent = txn.fee;
+        if (timeEl) timeEl.textContent = txn.time;
+        infoEl.style.display = 'block';
+    }
+
+    // ── PIN VERIFICATION ──────────────────────────────────────────────
+    function verifyPin(pin, requiredStage) {
+        if (!pin) return null;
+        var user = roster.find(function(u) { return u.active && u.pin === pin; });
+        if (!user) return null;
+        var rd = ROLE_DEFS[user.role];
+        if (!rd) return null;
+        if (rd.stages === 'ALL') return user;
+        if (requiredStage && !rd.stages.includes(requiredStage)) return null;
+        return user;
+    }
+
+    function isAdminPin(pin) {
+        return roster.some(function(u) { return u.active && u.pin === pin && u.role === 'Admin'; });
+    }
+
+    // ── STAGE MODAL (PIN-gated) ───────────────────────────────────────
+    function openStageModal() {
+        var t = selectedTransaction;
+        if (!t) return;
+        var nextStages = getNextStages(t.stage);
+        document.getElementById('stageModalRef').textContent = t.referenceNumber + ' — ' + t.applicantName;
+        document.getElementById('stageModalCurrent').textContent = t.stage;
+        document.getElementById('stageModalPIN').value = '';
+        document.getElementById('stageModalNotes').value = '';
+        document.getElementById('stagePINError').classList.add('hidden');
+        var sel = document.getElementById('stageModalNext');
+        sel.innerHTML = '<option value="">— Select next stage —</option>'
+            + nextStages.map(function(s) { return '<option value="' + s + '">' + s + '</option>'; }).join('');
+        // Role hints
+        var hints = document.getElementById('stageRoleHints');
+        hints.innerHTML = Object.entries(ROLE_DEFS).map(function(e) {
+            var k = e[0]; var r = e[1];
+            var stgs = r.stages === 'ALL' ? 'All stages' : r.stages.slice(0,2).join(', ') + (r.stages.length > 2 ? ' +' + (r.stages.length-2) + ' more' : '');
+            return '<div style="margin-bottom:3px"><span style="font-weight:600;color:' + r.color + '">' + r.label + ':</span> <span style="color:#6b7280">' + stgs + '</span></div>';
+        }).join('');
+        document.getElementById('stageModal').classList.remove('hidden');
+    }
+
+    function closeStageModal() {
+        document.getElementById('stageModal').classList.add('hidden');
+    }
+
+    async function confirmStageUpdate() {
+        var newStage = document.getElementById('stageModalNext').value;
+        var pin = document.getElementById('stageModalPIN').value;
+        var notes = document.getElementById('stageModalNotes').value.trim();
+        var errEl = document.getElementById('stagePINError');
+        if (!newStage) { alert('Please select a stage.'); return; }
+        if (!pin) { errEl.classList.remove('hidden'); errEl.textContent = 'PIN is required.'; return; }
+        var user = verifyPin(pin, newStage);
+        if (!user) { errEl.classList.remove('hidden'); return; }
+        errEl.classList.add('hidden');
+        closeStageModal();
+        await updateStage(newStage, user.name, notes);
+    }
+
+    // ── QR SLIP ───────────────────────────────────────────────────────
+    function getQRData(t) {
+        var pmt = t.payment || {};
+        var lines = [
+            'RFRO-XIII TRANSACTION',
+            'Ref: ' + t.referenceNumber,
+            'Applicant: ' + t.applicantName + (t.entityName ? ' / ' + t.entityName : ''),
+            'Service: ' + t.requestType.substring(0,60),
+            'Date Received: ' + t.dateReceived,
+            'Date Completed: ' + (t.history.find(function(h){return h.stage===STAGES.COMPLETED||h.stage===STAGES.QR_PRINTED;}) || {timestamp:''}).timestamp.split('T')[0],
+            'Amount Paid: ' + (pmt.amount ? peso(pmt.amount) : 'N/A') + (pmt.or ? ' OR# ' + pmt.or : ''),
+            'Staff: ' + (t.history[t.history.length-1].by || 'N/A')
+        ];
+        return encodeURIComponent(lines.join('\n'));
+    }
+
+    function openQRModal() {
+        var t = selectedTransaction;
+        if (!t) return;
+        qrPrintData = t;
+        document.getElementById('qrModalRef').textContent = t.referenceNumber + ' — ' + t.applicantName;
+        document.getElementById('qrImage').src = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + getQRData(t);
+        var pmt = t.payment || {};
+        document.getElementById('qrDetails').innerHTML = [
+            ['Applicant', t.applicantName],
+            ['Entity', t.entityName || '—'],
+            ['Service', t.requestType.length > 55 ? t.requestType.substring(0,55)+'…' : t.requestType],
+            ['Date Received', t.dateReceived],
+            ['Amount Paid', pmt.amount ? peso(pmt.amount) : '—'],
+            ['OR Number', pmt.or || '—'],
+            ['Mode', pmt.mode || '—'],
+            ['Status', t.stage]
+        ].map(function(row) {
+            return '<div class="flex gap-2 py-1 border-b border-gray-100 text-sm">'
+                + '<span class="text-gray-500 w-28 shrink-0">' + row[0] + ':</span>'
+                + '<span class="font-medium">' + row[1] + '</span></div>';
+        }).join('');
+        document.getElementById('qrModal').classList.remove('hidden');
+    }
+
+    function printQRSlip() {
+        var t = qrPrintData;
+        if (!t) return;
+        var pmt = t.payment || {};
+        var html = '<!DOCTYPE html><html><head><title>QR Slip ' + t.referenceNumber + '</title>'
+            + '<style>body{font-family:Arial,sans-serif;margin:0;padding:20px}'
+            + '.slip{border:2px solid #1e40af;border-radius:8px;padding:20px;max-width:380px;margin:0 auto}'
+            + '.hdr{text-align:center;border-bottom:1px solid #ddd;padding-bottom:10px;margin-bottom:10px}'
+            + '.hdr h2{margin:0;font-size:13px;color:#1e40af}'
+            + '.hdr p{margin:2px 0;font-size:11px;color:#6b7280}'
+            + '.ref{text-align:center;font-size:14px;font-weight:700;color:#1e40af;margin-bottom:8px}'
+            + '.qr{text-align:center;margin:10px 0}'
+            + 'table{width:100%;font-size:11px;border-collapse:collapse}'
+            + 'td{padding:4px 6px;border-bottom:.5px solid #f0f0f0}'
+            + 'td:first-child{font-weight:700;color:#1e40af;width:38%}'
+            + '.ftr{text-align:center;margin-top:10px;font-size:10px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:8px}'
+            + '@media print{body{padding:0}}</style></head><body>'
+            + '<div class="slip"><div class="hdr">'
+            + '<h2>Land Transportation Franchising and Regulatory Board</h2>'
+            + '<p>Regional Franchising and Regulatory Office XIII</p>'
+            + '<p>Transaction Completion Slip</p></div>'
+            + '<div class="ref">' + t.referenceNumber + '</div>'
+            + '<div class="qr"><img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + getQRData(t) + '" width="200" height="200"/></div>'
+            + '<table>'
+            + '<tr><td>Applicant</td><td>' + t.applicantName + '</td></tr>'
+            + '<tr><td>Entity</td><td>' + (t.entityName || '—') + '</td></tr>'
+            + '<tr><td>Service</td><td>' + t.requestType + '</td></tr>'
+            + '<tr><td>Date Received</td><td>' + t.dateReceived + '</td></tr>'
+            + '<tr><td>Amount Paid</td><td>' + (pmt.amount ? peso(pmt.amount) : '—') + '</td></tr>'
+            + '<tr><td>OR Number</td><td>' + (pmt.or || '—') + '</td></tr>'
+            + '<tr><td>Mode</td><td>' + (pmt.mode || '—') + '</td></tr>'
+            + '<tr><td>Status</td><td style="color:#15803d;font-weight:700">' + t.stage + '</td></tr>'
+            + '</table>'
+            + '<div class="ftr">Scan QR to verify · LTFRB RFRO XIII · ' + new Date().toLocaleDateString('en-PH') + '</div>'
+            + '</div><script>window.onload=function(){window.print()}<\/script>'
+            + '</body></html>';
+        var w = window.open('', '_blank', 'width=460,height=680');
+        if (!w) { alert('Please allow pop-ups to print.'); return; }
+        w.document.write(html);
+        w.document.close();
+    }
+
+    // ── VISITORS MODULE ───────────────────────────────────────────────
+    var visitorQSeq = 1;
+
+    function showVisitorForm() {
+        currentVisitType = 'Walk-in';
+        updateVisitTypeUI();
+        // Populate linked transaction dropdown
+        var sel = document.getElementById('v-txn');
+        sel.innerHTML = '<option value="">— Select transaction (optional) —</option>'
+            + transactions.map(function(t) {
+                return '<option value="' + t.referenceNumber + '">' + t.referenceNumber + ' — ' + t.applicantName + '</option>';
+            }).join('');
+        // Set today date
+        document.getElementById('v-date').value = new Date().toISOString().split('T')[0];
+        ['v-name','v-tel','v-ent','v-cop','v-route','v-plate','v-nature','v-notes'].forEach(function(id) {
+            var el = document.getElementById(id); if (el) el.value = '';
+        });
+        document.getElementById('v-meet').value = '';
+        document.getElementById('visitorModal').classList.remove('hidden');
+    }
+
+    function closeVisitorForm() {
+        document.getElementById('visitorModal').classList.add('hidden');
+    }
+
+    function setVisitType(type) {
+        currentVisitType = type;
+        updateVisitTypeUI();
+    }
+
+    function updateVisitTypeUI() {
+        var types = ['Walk-in','Booked','Complaint','Assistance','Follow-up'];
+        types.forEach(function(t) {
+            var btn = document.getElementById('vtype-' + t);
+            if (!btn) return;
+            if (t === currentVisitType) {
+                btn.className = 'px-3 py-1.5 rounded-full text-sm font-medium bg-indigo-600 text-white';
+            } else {
+                btn.className = 'px-3 py-1.5 rounded-full text-sm font-medium bg-white border text-gray-600';
+            }
+        });
+        document.getElementById('v-booked-fields').style.display = currentVisitType === 'Booked' ? 'grid' : 'none';
+        document.getElementById('v-complaint-fields').style.display = currentVisitType === 'Complaint' ? 'block' : 'none';
+        document.getElementById('v-followup-fields').style.display = currentVisitType === 'Follow-up' ? 'block' : 'none';
+        document.getElementById('v-ent-wrap').style.display = currentVisitType === 'Follow-up' ? 'none' : 'block';
+    }
+
+    function saveVisitor() {
+        var name = document.getElementById('v-name').value.trim();
+        var meet = document.getElementById('v-meet').value;
+        if (!name || !meet) { alert('Visitor name and personnel selection are required.'); return; }
+        var isWalkin = currentVisitType === 'Walk-in';
+        var dateEl = document.getElementById('v-date');
+        var timeEl = document.getElementById('v-time');
+        var dtStr = dateEl.value ? (dateEl.value + (timeEl && currentVisitType === 'Booked' ? 'T' + convertTime(timeEl.value) : 'T' + new Date().toTimeString().slice(0,5))) : new Date().toISOString();
+        var vis = {
+            id: 'VIS-' + Date.now(),
+            queueNo: isWalkin ? 'Q-' + String(visitorQSeq++).padStart(3,'0') : null,
+            type: currentVisitType,
+            visitor: name,
+            entity: (document.getElementById('v-ent') || {}).value || '',
+            meetWith: meet,
+            contact: document.getElementById('v-tel').value.trim(),
+            status: isWalkin ? 'Waiting' : 'Confirmed',
+            dateTime: dtStr,
+            linkedTxn: (document.getElementById('v-txn') || {}).value || '',
+            notes: document.getElementById('v-notes').value.trim(),
+            complaint: currentVisitType === 'Complaint' ? {
+                operator: document.getElementById('v-cop').value.trim(),
+                route: document.getElementById('v-route').value.trim(),
+                plateNo: document.getElementById('v-plate').value.trim(),
+                nature: document.getElementById('v-nature').value.trim()
+            } : null,
+            createdAt: new Date().toISOString()
+        };
+        visitors.push(vis);
+        localStorage.setItem('rfro_visitors', JSON.stringify(visitors));
+        closeVisitorForm();
+        renderVisitors();
+    }
+
+    function convertTime(t12) {
+        var parts = t12.match(/(\d+):(\d+)\s*(AM|PM)/i);
+        if (!parts) return '09:00';
+        var h = parseInt(parts[1]);
+        var m = parts[2];
+        var ampm = parts[3].toUpperCase();
+        if (ampm === 'PM' && h < 12) h += 12;
+        if (ampm === 'AM' && h === 12) h = 0;
+        return String(h).padStart(2,'0') + ':' + m;
+    }
+
+    function updateVisitorStatus(id, status) {
+        var vis = visitors.find(function(v) { return v.id === id; });
+        if (vis) { vis.status = status; localStorage.setItem('rfro_visitors', JSON.stringify(visitors)); renderVisitors(); }
+    }
+
+    function setVisitFilter(f) {
+        currentVisitFilter = f;
+        var filters = ['ALL','Walk-in','Booked','Complaint','Assistance','Follow-up'];
+        filters.forEach(function(flt) {
+            var btn = document.getElementById('vf-' + flt);
+            if (!btn) return;
+            btn.className = flt === f
+                ? 'px-4 py-2 rounded-full text-sm font-medium bg-gray-700 text-white'
+                : 'px-4 py-2 rounded-full text-sm font-medium bg-white border text-gray-600 hover:bg-gray-50';
+        });
+        renderVisitors();
+    }
+
+    function renderVisitors() {
+        var waiting = visitors.filter(function(v) { return v.type === 'Walk-in' && v.status === 'Waiting'; });
+        var booked = visitors.filter(function(v) { return v.type === 'Booked' && v.status === 'Confirmed'; });
+        var complaints = visitors.filter(function(v) { return v.type === 'Complaint' && v.status !== 'Done' && v.status !== 'Cancelled'; });
+        document.getElementById('visQueueCount').textContent = waiting.length;
+        document.getElementById('visBookedCount').textContent = booked.length;
+        document.getElementById('visComplaintCount').textContent = complaints.length;
+
+        // Queue strip
+        var qDiv = document.getElementById('walkinQueue');
+        var qList = document.getElementById('queueList');
+        if (waiting.length) {
+            qDiv.classList.remove('hidden');
+            qList.innerHTML = waiting.map(function(v) {
+                return '<div class="bg-white border border-orange-200 rounded-lg p-3 text-center min-w-24">'
+                    + '<div class="text-xl font-bold text-orange-600">' + v.queueNo + '</div>'
+                    + '<div class="text-xs font-medium text-gray-700 mt-1">' + v.visitor + '</div>'
+                    + '<div class="text-xs text-gray-400">' + v.meetWith.replace('(Regional Director)','RD').replace('(Asst. Regional Director)','ARD') + '</div>'
+                    + '</div>';
+            }).join('');
+        } else { qDiv.classList.add('hidden'); }
+
+        // Visitor list
+        var filtered = visitors.filter(function(v) {
+            if (currentVisitFilter === 'ALL') return true;
+            return v.type === currentVisitFilter;
+        }).slice().reverse();
+
+        var listEl = document.getElementById('visitorList');
+        if (!filtered.length) {
+            listEl.innerHTML = '<div class="p-8 text-center text-gray-400">No records found.</div>';
+            return;
+        }
+        var statusColors = { Waiting:'bg-orange-100 text-orange-700', Confirmed:'bg-blue-100 text-blue-700', 'In Progress':'bg-purple-100 text-purple-700', Done:'bg-green-100 text-green-700', Cancelled:'bg-gray-100 text-gray-500' };
+        var typeIcons = { 'Walk-in':'🚶','Booked':'📅','Complaint':'⚠️','Assistance':'💬','Follow-up':'🔗' };
+        listEl.innerHTML = '<div class="divide-y">' + filtered.map(function(v) {
+            var sc = statusColors[v.status] || 'bg-gray-100 text-gray-600';
+            var dt = new Date(v.dateTime);
+            return '<div class="p-4 hover:bg-gray-50">'
+                + '<div class="flex justify-between items-start gap-3">'
+                + '<div class="flex-1 min-w-0">'
+                + '<div class="flex items-center gap-2 flex-wrap mb-1">'
+                + '<span class="font-mono text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded">' + v.id + '</span>'
+                + (v.queueNo ? '<span class="text-xs bg-orange-100 text-orange-700 font-bold px-2 py-0.5 rounded-full">' + v.queueNo + '</span>' : '')
+                + '<span class="text-xs px-2 py-0.5 rounded-full font-medium ' + sc + '">' + v.status + '</span>'
+                + '</div>'
+                + '<div class="font-semibold text-gray-800">' + (typeIcons[v.type] || '') + ' ' + v.visitor + '</div>'
+                + (v.entity ? '<div class="text-xs text-blue-600">' + v.entity + '</div>' : '')
+                + '<div class="text-xs text-gray-500 mt-0.5">' + v.type + ' &bull; <strong>' + v.meetWith + '</strong></div>'
+                + (v.complaint ? '<div class="text-xs text-orange-600 mt-1">Complaint re: ' + (v.complaint.operator||'') + (v.complaint.plateNo ? ' (' + v.complaint.plateNo + ')' : '') + '</div>' : '')
+                + (v.linkedTxn ? '<div class="text-xs text-gray-400 mt-0.5">Linked: ' + v.linkedTxn + '</div>' : '')
+                + (v.notes ? '<div class="text-xs text-gray-400 mt-0.5 italic">' + v.notes + '</div>' : '')
+                + '</div>'
+                + '<div class="text-right shrink-0">'
+                + '<div class="text-xs text-gray-400">' + dt.toLocaleDateString('en-PH',{month:'short',day:'2-digit'}) + '</div>'
+                + '<div class="text-xs text-gray-400">' + dt.toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'}) + '</div>'
+                + (v.status !== 'Done' && v.status !== 'Cancelled' ? '<div class="flex gap-1 mt-1 justify-end">'
+                    + (v.status === 'Waiting' ? '<button onclick="updateVisitorStatus(\'' + v.id + '\',\'In Progress\')" class="text-xs px-2 py-1 bg-purple-500 text-white rounded hover:bg-purple-600">Start</button>' : '')
+                    + '<button onclick="updateVisitorStatus(\'' + v.id + '\',\'Done\')" class="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700">Done</button>'
+                    + '</div>' : '')
+                + '</div>'
+                + '</div></div>';
+        }).join('') + '</div>';
+    }
+
+    // ── SETTINGS / ROSTER ─────────────────────────────────────────────
+    function openSettings() {
+        document.getElementById('settingsAdminPIN').value = '';
+        document.getElementById('settingsPINErr').classList.add('hidden');
+        document.getElementById('settingsVerifyPanel').classList.remove('hidden');
+        document.getElementById('settingsPanel').classList.add('hidden');
+        document.getElementById('addPersonnelForm').classList.add('hidden');
+        document.getElementById('settingsModal').classList.remove('hidden');
+    }
+
+    function closeSettings() {
+        document.getElementById('settingsModal').classList.add('hidden');
+    }
+
+    function verifySettingsPIN() {
+        var pin = document.getElementById('settingsAdminPIN').value;
+        if (!isAdminPin(pin)) {
+            document.getElementById('settingsPINErr').classList.remove('hidden');
+            return;
+        }
+        document.getElementById('settingsPINErr').classList.add('hidden');
+        document.getElementById('settingsVerifyPanel').classList.add('hidden');
+        document.getElementById('settingsPanel').classList.remove('hidden');
+        renderRoster();
+    }
+
+    function renderRoster() {
+        document.getElementById('rosterCount').textContent = roster.length;
+        var roleColors = { Receiving:'#1565c0',Cashier:'#1b5e20',Processor:'#4527a0',Approver:'#e65100',Releasing:'#006064',Admin:'#b71c1c' };
+        document.getElementById('rosterList').innerHTML = roster.map(function(u, i) {
+            var rd = ROLE_DEFS[u.role] || {};
+            var col = roleColors[u.role] || '#374151';
+            var initials = u.name.split(' ').map(function(w){return w[0]||'';}).join('').substring(0,2).toUpperCase();
+            return '<div class="flex items-center gap-3 p-3 ' + (!u.active ? 'opacity-40' : '') + '">'
+                + '<div style="width:36px;height:36px;border-radius:50%;background:' + col + '22;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:' + col + ';flex-shrink:0">' + initials + '</div>'
+                + '<div class="flex-1 min-w-0">'
+                + '<div class="font-medium text-sm">' + u.name + '</div>'
+                + '<div class="text-xs" style="color:' + col + '">' + (rd.label || u.role) + '</div>'
+                + '</div>'
+                + '<div class="text-right shrink-0">'
+                + '<div class="text-xs text-gray-400">PIN: ' + '•'.repeat(u.pin.length) + '</div>'
+                + '<button onclick="toggleRosterUser(' + i + ')" class="text-xs px-2 py-0.5 rounded-full mt-1 border ' + (u.active ? 'border-red-300 text-red-600 hover:bg-red-50' : 'border-green-300 text-green-600 hover:bg-green-50') + '">' + (u.active ? 'Deactivate' : 'Activate') + '</button>'
+                + '</div></div>';
+        }).join('');
+        // Role permissions
+        document.getElementById('rolePermissions').innerHTML = Object.entries(ROLE_DEFS).map(function(e) {
+            var k = e[0]; var r = e[1];
+            return '<div class="flex gap-2 text-xs mb-2">'
+                + '<span style="font-weight:600;color:' + r.color + ';width:150px;flex-shrink:0">' + r.label + ':</span>'
+                + '<span class="text-gray-500">' + (r.stages === 'ALL' ? 'All stages' : r.stages.join(', ')) + '</span>'
+                + '</div>';
+        }).join('');
+    }
+
+    function showAddPersonnel() {
+        document.getElementById('addPersonnelForm').classList.remove('hidden');
+        document.getElementById('np-name').value = '';
+        document.getElementById('np-pin').value = '';
+    }
+
+    function cancelAddPersonnel() {
+        document.getElementById('addPersonnelForm').classList.add('hidden');
+    }
+
+    function savePersonnel() {
+        var name = document.getElementById('np-name').value.trim();
+        var pin = document.getElementById('np-pin').value.trim();
+        var role = document.getElementById('np-role').value;
+        if (!name || !pin || !role) { alert('All fields required.'); return; }
+        if (roster.some(function(u) { return u.pin === pin; })) { alert('That PIN is already in use. Choose a different PIN.'); return; }
+        roster.push({ id: 'u' + Date.now(), name: name, role: role, pin: pin, active: true });
+        localStorage.setItem('rfro_roster', JSON.stringify(roster));
+        cancelAddPersonnel();
+        renderRoster();
+    }
+
+    function toggleRosterUser(i) {
+        roster[i].active = !roster[i].active;
+        localStorage.setItem('rfro_roster', JSON.stringify(roster));
+        renderRoster();
     }
 
     // ── CLOCK ─────────────────────────────────────────────────────────
