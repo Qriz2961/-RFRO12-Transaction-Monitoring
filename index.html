@@ -9,7 +9,17 @@
         .ac-dropdown{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #d1d5db;border-radius:0.5rem;z-index:100;max-height:180px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.1)}
         .ac-item{padding:8px 12px;font-size:13px;cursor:pointer;border-bottom:1px solid #f3f4f6}
         .ac-item:hover{background:#eff6ff}
+        .ac-item.ac-active{background:#dbeafe}
         .fee-info{background:#f0fdf4;border:1px solid #86efac;border-radius:0.5rem;padding:10px 14px;margin-top:6px;font-size:13px;display:none}
+        .combo-wrap{position:relative}
+        .combo-wrap input{padding-right:2.2rem}
+        .combo-arrow{position:absolute;right:0.6rem;top:50%;transform:translateY(-50%);pointer-events:none;color:#6b7280;font-size:11px}
+        .combo-drop{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #2563eb;border-top:none;border-radius:0 0 0.5rem 0.5rem;z-index:200;max-height:220px;overflow-y:auto;box-shadow:0 6px 16px rgba(0,0,0,.12)}
+        .combo-item{padding:7px 12px;font-size:12px;cursor:pointer;border-bottom:1px solid #f3f4f6;line-height:1.4}
+        .combo-item:hover,.combo-item.combo-active{background:#eff6ff}
+        .combo-item .combo-no{color:#2563eb;font-weight:600;margin-right:4px;font-size:11px}
+        .combo-item .combo-match{background:#fef08a;border-radius:2px}
+        .combo-empty{padding:10px 12px;font-size:12px;color:#9ca3af;text-align:center}
     </style>
 </head>
 <body class="bg-gray-50">
@@ -263,9 +273,10 @@
                 </div>
             </div>
             <div id="qrDetails" class="text-sm space-y-1 mb-4"></div>
-            <div class="flex gap-3">
-                <button onclick="document.getElementById('qrModal').classList.add('hidden')" class="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50">Close</button>
-                <button onclick="printQRSlip()" class="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">&#128424; Print Slip</button>
+            <div class="flex gap-2 flex-wrap">
+                <button onclick="document.getElementById('qrModal').classList.add('hidden')" class="px-4 py-2 border rounded-lg hover:bg-gray-50 text-sm">Close</button>
+                <button onclick="printQRSlip()" class="flex-1 px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium text-sm">&#128424; Print Slip + Corner QR</button>
+                <button onclick="printQRSticker()" class="flex-1 px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium text-sm">&#127991; Print Avery Sticker</button>
             </div>
         </div>
     </div>
@@ -405,9 +416,15 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1">Request Type *</label>
-                    <select id="requestType" class="w-full px-3 py-2 border rounded-lg" onchange="onServiceSelect(this.value,'feeInfo')">
-                        <option value="">— Select from 110 LTFRB service types —</option>
-                    </select>
+                    <div class="combo-wrap">
+                        <input type="text" id="requestType" placeholder="Type to search or select from 110 LTFRB service types…" autocomplete="off" class="w-full px-3 py-2 border rounded-lg"
+                            oninput="comboInput('requestType','feeInfo')"
+                            onfocus="comboOpen('requestType')"
+                            onblur="setTimeout(function(){comboClose('requestType')},200)"
+                            onkeydown="comboKey(event,'requestType','feeInfo')">
+                        <span class="combo-arrow">&#9660;</span>
+                        <div id="requestType-drop" class="combo-drop hidden"></div>
+                    </div>
                     <div id="feeInfo" class="fee-info">
                         <div class="flex gap-2 mb-1"><span class="font-semibold text-green-700 w-32 shrink-0">Estimated Fee:</span><span id="feeInfoFee" class="text-green-800"></span></div>
                         <div class="flex gap-2"><span class="font-semibold text-green-700 w-32 shrink-0">Processing Time:</span><span id="feeInfoTime" class="text-green-800"></span></div>
@@ -483,9 +500,15 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1">Request Type *</label>
-                    <select id="editRequestType" class="w-full px-3 py-2 border rounded-lg" onchange="onServiceSelect(this.value,'editFeeInfo')">
-                        <option value="">— Select service type —</option>
-                    </select>
+                    <div class="combo-wrap">
+                        <input type="text" id="editRequestType" placeholder="Type to search or select…" autocomplete="off" class="w-full px-3 py-2 border rounded-lg"
+                            oninput="comboInput('editRequestType','editFeeInfo')"
+                            onfocus="comboOpen('editRequestType')"
+                            onblur="setTimeout(function(){comboClose('editRequestType')},200)"
+                            onkeydown="comboKey(event,'editRequestType','editFeeInfo')">
+                        <span class="combo-arrow">&#9660;</span>
+                        <div id="editRequestType-drop" class="combo-drop hidden"></div>
+                    </div>
                     <div id="editFeeInfo" class="fee-info">
                         <div class="flex gap-2 mb-1"><span class="font-semibold text-green-700 w-32 shrink-0">Estimated Fee:</span><span id="editFeeInfoFee" class="text-green-800"></span></div>
                         <div class="flex gap-2"><span class="font-semibold text-green-700 w-32 shrink-0">Processing Time:</span><span id="editFeeInfoTime" class="text-green-800"></span></div>
@@ -787,18 +810,7 @@
             opt.value = stage; opt.textContent = stage;
             select.appendChild(opt);
         });
-        // Populate service request dropdowns (add + edit modals)
-        ['requestType','editRequestType'].forEach(function(id) {
-            var sel = document.getElementById(id);
-            TXN_LIST.forEach(function(t) {
-                var opt = document.createElement('option');
-                opt.value = t.name;
-                opt.dataset.fee = t.fee;
-                opt.dataset.time = t.time;
-                opt.textContent = t.no + '. ' + t.name;
-                sel.appendChild(opt);
-            });
-        });
+        // Combo dropdowns for request type use TXN_LIST directly — no pre-population needed
         document.getElementById('dateReceived').value = new Date().toISOString().split('T')[0];
         var now = new Date();
         var ym = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
@@ -855,29 +867,28 @@
     function showAddForm() { document.getElementById('addModal').classList.remove('hidden'); }
     function closeAddForm() {
         document.getElementById('addModal').classList.add('hidden');
-        ['applicantName','entityName','contactNumber','email'].forEach(function(id) {
+        ['applicantName','entityName','contactNumber','email','requestType'].forEach(function(id) {
             document.getElementById(id).value = '';
         });
-        document.getElementById('requestType').value = '';
         document.getElementById('feeInfo').style.display = 'none';
         document.getElementById('refPreview').textContent = '';
+        comboClose('requestType');
         hideAC('entityAC');
     }
 
     async function addTransaction() {
         var name = document.getElementById('applicantName').value.trim();
-        var typeEl = document.getElementById('requestType');
-        var type = typeEl.value.trim();
+        var type = document.getElementById('requestType').value.trim();
         var date = document.getElementById('dateReceived').value;
         if (!name || !type || !date) { alert('Please fill required fields'); return; }
-        var selOpt = typeEl.options[typeEl.selectedIndex];
+        var match = TXN_LIST.find(function(x) { return x.name === type; });
         var t = {
             id: Date.now().toString(),
             referenceNumber: generateRef(name, date),
             applicantName: name,
             requestType: type,
-            estimatedFee: selOpt ? selOpt.dataset.fee || '' : '',
-            estimatedTime: selOpt ? selOpt.dataset.time || '' : '',
+            estimatedFee: match ? match.fee : '',
+            estimatedTime: match ? match.time : '',
             entityName: document.getElementById('entityName').value.trim(),
             contactNumber: document.getElementById('contactNumber').value.trim(),
             email: document.getElementById('email').value.trim(),
@@ -1127,18 +1138,8 @@
         document.getElementById('editRefLabel').textContent = t.referenceNumber + ' — ' + t.applicantName;
         document.getElementById('editApplicantName').value = t.applicantName;
         document.getElementById('editEntityName').value = t.entityName || '';
-        // Set dropdown to match existing requestType
-        var sel = document.getElementById('editRequestType');
-        sel.value = t.requestType;
-        if (!sel.value) {
-            // value not in list — add a temporary option
-            var opt = document.createElement('option');
-            opt.value = t.requestType;
-            opt.textContent = t.requestType;
-            sel.insertBefore(opt, sel.options[1]);
-            sel.value = t.requestType;
-        }
-        // Show fee info if available
+        // Set combo input to current request type
+        document.getElementById('editRequestType').value = t.requestType;
         onServiceSelect(t.requestType, 'editFeeInfo');
         document.getElementById('editContactNumber').value = t.contactNumber || '';
         document.getElementById('editEmail').value = t.email || '';
@@ -1148,14 +1149,14 @@
     function closeEditForm() {
         document.getElementById('editModal').classList.add('hidden');
         document.getElementById('editFeeInfo').style.display = 'none';
+        comboClose('editRequestType');
         hideAC('editEntityAC');
     }
 
     async function saveEdit() {
         var reason = document.getElementById('editReason').value.trim();
         var name = document.getElementById('editApplicantName').value.trim();
-        var typeEl = document.getElementById('editRequestType');
-        var type = typeEl.value.trim();
+        var type = document.getElementById('editRequestType').value.trim();
         if (!name || !type) { alert('Name and Request Type are required.'); return; }
         if (!reason) { alert('Please provide a reason for the edit.'); return; }
         var t = transactions.find(function(tx) { return tx.id === selectedTransaction.id; });
@@ -1163,12 +1164,12 @@
         if (t.applicantName !== name) changes.push('Name: "' + t.applicantName + '" -> "' + name + '"');
         if ((t.entityName || '') !== document.getElementById('editEntityName').value.trim()) changes.push('Entity changed');
         if (t.requestType !== type) changes.push('Type changed');
-        var selOpt = typeEl.options[typeEl.selectedIndex];
+        var match = TXN_LIST.find(function(x) { return x.name === type; });
         t.applicantName = name;
         t.entityName = document.getElementById('editEntityName').value.trim();
         t.requestType = type;
-        t.estimatedFee = selOpt ? selOpt.dataset.fee || t.estimatedFee || '' : t.estimatedFee || '';
-        t.estimatedTime = selOpt ? selOpt.dataset.time || t.estimatedTime || '' : t.estimatedTime || '';
+        t.estimatedFee = match ? match.fee : (t.estimatedFee || '');
+        t.estimatedTime = match ? match.time : (t.estimatedTime || '');
         t.contactNumber = document.getElementById('editContactNumber').value.trim();
         t.email = document.getElementById('editEmail').value.trim();
         t.history.push({ stage: t.stage, type: 'EDIT', timestamp: new Date().toISOString(), notes: 'Edited at "' + t.stage + '". Reason: ' + reason + (changes.length ? '. ' + changes.join('; ') : '') });
@@ -1750,10 +1751,17 @@
         var t = qrPrintData;
         if (!t) return;
         var pmt = t.payment || {};
+        var qrUrl  = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + getQRData(t);
+        var qrCorner = 'https://api.qrserver.com/v1/create-qr-code/?size=72x72&data=' + getQRData(t);
+        var today = new Date().toLocaleDateString('en-PH');
         var html = '<!DOCTYPE html><html><head><title>QR Slip ' + t.referenceNumber + '</title>'
-            + '<style>body{font-family:Arial,sans-serif;margin:0;padding:20px}'
-            + '.slip{border:2px solid #1e40af;border-radius:8px;padding:20px;max-width:380px;margin:0 auto}'
-            + '.hdr{text-align:center;border-bottom:1px solid #ddd;padding-bottom:10px;margin-bottom:10px}'
+            + '<style>'
+            + 'body{font-family:Arial,sans-serif;margin:0;padding:20px}'
+            + '.slip{border:2px solid #1e40af;border-radius:8px;padding:20px;max-width:420px;margin:0 auto;position:relative}'
+            + '.corner-stamp{position:absolute;top:12px;right:12px;text-align:center;background:#fff;border:1px solid #c7d2fe;border-radius:4px;padding:3px}'
+            + '.corner-stamp img{display:block;width:64px;height:64px}'
+            + '.corner-stamp .cs-label{font-size:6px;color:#4338ca;margin-top:2px;font-family:Arial,sans-serif;font-weight:700;letter-spacing:.5px}'
+            + '.hdr{text-align:center;border-bottom:1px solid #ddd;padding-bottom:10px;margin-bottom:10px;padding-right:80px}'
             + '.hdr h2{margin:0;font-size:13px;color:#1e40af}'
             + '.hdr p{margin:2px 0;font-size:11px;color:#6b7280}'
             + '.ref{text-align:center;font-size:14px;font-weight:700;color:#1e40af;margin-bottom:8px}'
@@ -1761,14 +1769,17 @@
             + 'table{width:100%;font-size:11px;border-collapse:collapse}'
             + 'td{padding:4px 6px;border-bottom:.5px solid #f0f0f0}'
             + 'td:first-child{font-weight:700;color:#1e40af;width:38%}'
+            + '.placement{background:#fef9c3;border:1px dashed #ca8a04;border-radius:4px;padding:6px 10px;font-size:10px;color:#92400e;margin-top:10px;text-align:center}'
             + '.ftr{text-align:center;margin-top:10px;font-size:10px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:8px}'
-            + '@media print{body{padding:0}}</style></head><body>'
-            + '<div class="slip"><div class="hdr">'
+            + '@media print{body{padding:0}.slip{border-radius:0}}</style></head><body>'
+            + '<div class="slip">'
+            + '<div class="corner-stamp"><img src="' + qrCorner + '" alt="QR"/><div class="cs-label">SCAN TO VERIFY</div></div>'
+            + '<div class="hdr">'
             + '<h2>Land Transportation Franchising and Regulatory Board</h2>'
             + '<p>Regional Franchising and Regulatory Office XIII</p>'
             + '<p>Transaction Completion Slip</p></div>'
             + '<div class="ref">' + t.referenceNumber + '</div>'
-            + '<div class="qr"><img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + getQRData(t) + '" width="200" height="200"/></div>'
+            + '<div class="qr"><img src="' + qrUrl + '" width="180" height="180"/></div>'
             + '<table>'
             + '<tr><td>Applicant</td><td>' + t.applicantName + '</td></tr>'
             + '<tr><td>Entity</td><td>' + (t.entityName || '—') + '</td></tr>'
@@ -1779,10 +1790,71 @@
             + '<tr><td>Mode</td><td>' + (pmt.mode || '—') + '</td></tr>'
             + '<tr><td>Status</td><td style="color:#15803d;font-weight:700">' + t.stage + '</td></tr>'
             + '</table>'
-            + '<div class="ftr">Scan QR to verify · LTFRB RFRO XIII · ' + new Date().toLocaleDateString('en-PH') + '</div>'
+            + '<div class="placement">&#128204;&nbsp; Attach this slip at the BACK of the FIRST PAGE of the released document. The corner QR (top-right) can be used as a quick-scan reference.</div>'
+            + '<div class="ftr">Scan QR to verify &middot; LTFRB RFRO XIII &middot; ' + today + '</div>'
             + '</div><script>window.onload=function(){window.print()}<\/script>'
             + '</body></html>';
-        var w = window.open('', '_blank', 'width=460,height=680');
+        var w = window.open('', '_blank', 'width=480,height=720');
+        if (!w) { alert('Please allow pop-ups to print.'); return; }
+        w.document.write(html);
+        w.document.close();
+    }
+
+    // ── AVERY 22802-STYLE QR STICKER SHEET (1" × 1", 4×5 = 20 labels) ──────
+    function printQRSticker() {
+        var t = qrPrintData;
+        if (!t) return;
+        var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=80x80&margin=2&data=' + getQRData(t);
+        var refShort = t.referenceNumber;
+        var nameShort = t.applicantName.length > 22 ? t.applicantName.substring(0,21) + '…' : t.applicantName;
+        var today = new Date().toLocaleDateString('en-PH');
+
+        // Build one label's inner HTML
+        var labelInner = '<img src="' + qrUrl + '" width="72" height="72" style="display:block;margin:0 auto 2px">'
+            + '<div style="font-size:5.5pt;color:#1e3a8a;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;line-height:1.2">' + refShort + '</div>'
+            + '<div style="font-size:5pt;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;line-height:1.2">' + nameShort + '</div>';
+
+        // Build 20-label grid (label 1 filled, 2-20 empty with outline)
+        var labelsHtml = '';
+        for (var i = 0; i < 20; i++) {
+            var inner = i === 0 ? labelInner : '';
+            // Position: 4 cols × 5 rows
+            // Avery 22802 approximate layout:
+            //   Left margin: 1.75in, top margin: 1.5in
+            //   Col pitch: 1.75in (1in label + 0.75in gap)
+            //   Row pitch: 1.9in  (1in label + 0.9in gap)
+            var col = i % 4;
+            var row = Math.floor(i / 4);
+            var leftIn  = 1.75 + col * 1.75;
+            var topIn   = 1.5  + row * 1.9;
+            labelsHtml += '<div style="position:absolute;'
+                + 'left:' + leftIn + 'in;top:' + topIn + 'in;'
+                + 'width:1in;height:1in;'
+                + 'box-sizing:border-box;'
+                + 'border:0.5px dashed #d1d5db;'
+                + 'padding:2px;'
+                + 'overflow:hidden;'
+                + 'font-family:Arial,sans-serif">' + inner + '</div>';
+        }
+
+        var html = '<!DOCTYPE html><html><head>'
+            + '<title>QR Sticker Sheet &mdash; ' + t.referenceNumber + '</title>'
+            + '<style>'
+            + '@page{size:letter;margin:0}'
+            + 'body{margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+            + '.sheet{position:relative;width:8.5in;height:11in;overflow:hidden}'
+            + '.guide{position:absolute;top:0.8in;left:0;right:0;text-align:center;font-size:9pt;color:#9ca3af;font-family:Arial,sans-serif}'
+            + '.guide span{background:#fff;padding:0 8px}'
+            + '@media print{.guide{display:none}}'
+            + '</style></head><body>'
+            + '<div class="sheet">'
+            + '<div class="guide"><span>&#127991; LTFRB QR Sticker Sheet &mdash; ' + t.referenceNumber + ' &mdash; ' + today + ' &mdash; Load Avery 22802 (1&quot;&times;1&quot;) label sheet before printing</span></div>'
+            + labelsHtml
+            + '</div>'
+            + '<script>window.onload=function(){window.print()}<\/script>'
+            + '</body></html>';
+
+        var w = window.open('', '_blank', 'width=900,height=700');
         if (!w) { alert('Please allow pop-ups to print.'); return; }
         w.document.write(html);
         w.document.close();
@@ -2043,6 +2115,109 @@
         roster[i].active = !roster[i].active;
         localStorage.setItem('rfro_roster', JSON.stringify(roster));
         renderRoster();
+    }
+
+    // ── COMBO DROPDOWN — Request Type ────────────────────────────────
+    var _comboIdx = {};  // tracks keyboard-selected index per combo id
+
+    function comboGetDrop(id) {
+        return document.getElementById(id + '-drop');
+    }
+
+    function comboHighlight(text, query) {
+        if (!query) return text;
+        var re = new RegExp('(' + query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')', 'gi');
+        return text.replace(re, '<span class="combo-match">$1</span>');
+    }
+
+    function comboRender(id, infoId, query) {
+        var drop = comboGetDrop(id);
+        var lo = (query || '').toLowerCase().trim();
+        var results = lo.length === 0
+            ? TXN_LIST                                              // show all when empty
+            : TXN_LIST.filter(function(t) {
+                return t.name.toLowerCase().includes(lo)
+                    || String(t.no).includes(lo);
+              });
+        if (!results.length) {
+            drop.innerHTML = '<div class="combo-empty">No matching service type found — you may type a custom entry.</div>';
+        } else {
+            drop.innerHTML = results.map(function(t, i) {
+                return '<div class="combo-item" data-val="' + t.name.replace(/"/g,'&quot;') + '" data-idx="' + i + '"'
+                    + ' onmousedown="comboSelect('' + id + '','' + infoId + '',this)">'
+                    + '<span class="combo-no">' + t.no + '.</span>'
+                    + comboHighlight(t.name, lo)
+                    + '</div>';
+            }).join('');
+        }
+        _comboIdx[id] = -1;
+        drop.classList.remove('hidden');
+    }
+
+    function comboOpen(id) {
+        var inp = document.getElementById(id);
+        comboRender(id, null, inp.value);
+    }
+
+    function comboInput(id, infoId) {
+        var inp = document.getElementById(id);
+        var val = inp.value;
+        comboRender(id, infoId, val);
+        // Live fee display as user types exact match
+        onServiceSelect(val, infoId);
+    }
+
+    function comboSelect(id, infoId, el) {
+        var val = el.getAttribute('data-val');
+        document.getElementById(id).value = val;
+        comboClose(id);
+        onServiceSelect(val, infoId);
+    }
+
+    function comboClose(id) {
+        var drop = comboGetDrop(id);
+        if (drop) drop.classList.add('hidden');
+        _comboIdx[id] = -1;
+    }
+
+    function comboKey(e, id, infoId) {
+        var drop = comboGetDrop(id);
+        if (drop.classList.contains('hidden')) {
+            if (e.key === 'ArrowDown' || e.key === 'Enter') {
+                comboRender(id, infoId, document.getElementById(id).value);
+            }
+            return;
+        }
+        var items = drop.querySelectorAll('.combo-item');
+        if (!items.length) return;
+        var idx = _comboIdx[id] !== undefined ? _comboIdx[id] : -1;
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            idx = Math.min(idx + 1, items.length - 1);
+            _comboIdx[id] = idx;
+            items.forEach(function(it, i) {
+                it.classList.toggle('combo-active', i === idx);
+            });
+            items[idx].scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            idx = Math.max(idx - 1, 0);
+            _comboIdx[id] = idx;
+            items.forEach(function(it, i) {
+                it.classList.toggle('combo-active', i === idx);
+            });
+            items[idx].scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (idx >= 0 && items[idx]) {
+                var val = items[idx].getAttribute('data-val');
+                document.getElementById(id).value = val;
+                comboClose(id);
+                onServiceSelect(val, infoId);
+            }
+        } else if (e.key === 'Escape') {
+            comboClose(id);
+        }
     }
 
     // ── CLOCK ─────────────────────────────────────────────────────────
