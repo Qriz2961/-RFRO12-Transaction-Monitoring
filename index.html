@@ -1714,17 +1714,27 @@
     // ── QR SLIP ───────────────────────────────────────────────────────
     function getQRData(t) {
         var pmt = t.payment || {};
+        var completed = t.history.find(function(h){
+            return h.stage === STAGES.COMPLETED || h.stage === STAGES.QR_PRINTED;
+        });
+        var dateCompleted = completed ? completed.timestamp.split('T')[0] : 'Pending';
         var lines = [
-            'RFRO-XIII TRANSACTION',
-            'Ref: ' + t.referenceNumber,
-            'Applicant: ' + t.applicantName + (t.entityName ? ' / ' + t.entityName : ''),
-            'Service: ' + t.requestType.substring(0,60),
-            'Date Received: ' + t.dateReceived,
-            'Date Completed: ' + (t.history.find(function(h){return h.stage===STAGES.COMPLETED||h.stage===STAGES.QR_PRINTED;}) || {timestamp:''}).timestamp.split('T')[0],
-            'Amount Paid: ' + (pmt.amount ? peso(pmt.amount) : 'N/A') + (pmt.or ? ' OR# ' + pmt.or : ''),
-            'Staff: ' + (t.history[t.history.length-1].by || 'N/A')
+            'LTFRB RFRO XIII - TRANSACTION RECORD',
+            'Ref No : ' + t.referenceNumber,
+            'Applicant : ' + t.applicantName,
+            'Entity : ' + (t.entityName || 'N/A'),
+            'Service : ' + t.requestType.substring(0, 55),
+            'Received : ' + t.dateReceived,
+            'Completed : ' + dateCompleted,
+            'Amount : ' + (pmt.amount ? peso(pmt.amount) : 'N/A'),
+            'OR No : ' + (pmt.or || 'N/A'),
+            'Mode : ' + (pmt.mode || 'N/A'),
+            'Status : ' + t.stage
         ];
-        return encodeURIComponent(lines.join('\n'));
+        // Use encodeURIComponent on the full joined string so the QR API
+        // receives it as a proper URL parameter — the API decodes it before
+        // encoding into the QR, so the scanner reads plain readable text.
+        return encodeURIComponent(lines.join(' | '));
     }
 
     function openQRModal() {
