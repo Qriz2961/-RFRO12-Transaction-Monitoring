@@ -1792,7 +1792,7 @@
             + '</table>'
             + '<div class="placement">&#128204;&nbsp; Attach this slip at the BACK of the FIRST PAGE of the released document. The corner QR (top-right) can be used as a quick-scan reference.</div>'
             + '<div class="ftr">Scan QR to verify &middot; LTFRB RFRO XIII &middot; ' + today + '</div>'
-            + '</div><script>window.onload=function(){window.print()}<\/script>'
+            + '</div>\u003cscript>window.onload=function(){window.print()}\u003c/script>'
             + '</body></html>';
         var w = window.open('', '_blank', 'width=480,height=720');
         if (!w) { alert('Please allow pop-ups to print.'); return; }
@@ -1851,7 +1851,7 @@
             + '<div class="guide"><span>&#127991; LTFRB QR Sticker Sheet &mdash; ' + t.referenceNumber + ' &mdash; ' + today + ' &mdash; Load Avery 22802 (1&quot;&times;1&quot;) label sheet before printing</span></div>'
             + labelsHtml
             + '</div>'
-            + '<script>window.onload=function(){window.print()}<\/script>'
+            + '<scr'+'ipt>window.onload=function(){window.print()}</scr'+'ipt>'
             + '</body></html>';
 
         var w = window.open('', '_blank', 'width=900,height=700');
