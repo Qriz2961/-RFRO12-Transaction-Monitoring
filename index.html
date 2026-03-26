@@ -1447,6 +1447,66 @@
             + '</tr>';
         return '<table style="width:100%;border-collapse:collapse;margin-bottom:20px;">' + rows + '</table>';
     }
+    function buildVisitorTable(visList) {
+        if (!visList || !visList.length) {
+            return '<p style="color:#6b7280;font-style:italic;font-size:12px;padding:8px 0;">No visitors recorded for this period.</p>';
+        }
+        var typeColors = {
+            'Walk-in':            '#1d4ed8',
+            'Booked':             '#7c3aed',
+            'Complaint':          '#dc2626',
+            'Assistance/Inquiry': '#059669',
+            'Follow-up':          '#d97706'
+        };
+        var rows = visList.map(function(v, i) {
+            var dt = new Date(v.dateTime);
+            var timeStr = isNaN(dt) ? v.dateTime : dt.toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit',hour12:true});
+            var dateStr = isNaN(dt) ? '' : dt.toLocaleDateString('en-PH',{month:'short',day:'numeric'});
+            var subject = v.type;
+            if (v.type === 'Complaint' && v.complaint && v.complaint.nature)
+                subject = 'Complaint: ' + v.complaint.nature.substring(0,50);
+            else if (v.type === 'Follow-up' && v.linkedTxn)
+                subject = 'Follow-up on ' + v.linkedTxn;
+            else if (v.notes)
+                subject = v.type + (v.notes ? ' — ' + v.notes.substring(0,40) : '');
+            var typeColor = typeColors[v.type] || '#374151';
+            var bg = i % 2 === 0 ? '#ffffff' : '#f0f4fa';
+            return '<tr style="background:' + bg + '">'
+                + '<td style="padding:5px 8px;border:1px solid #e5e7eb;font-size:11px;color:#374151">'
+                +   (v.queueNo ? '<span style="font-weight:700;color:#1d4ed8">' + v.queueNo + '</span> ' : '')
+                +   v.visitor + (v.entity ? '<br><span style="color:#6b7280;font-size:10px">' + v.entity + '</span>' : '')
+                + '</td>'
+                + '<td style="padding:5px 8px;border:1px solid #e5e7eb;font-size:11px;font-weight:600;color:#1f3864">' + v.meetWith + '</td>'
+                + '<td style="padding:5px 8px;border:1px solid #e5e7eb;font-size:11px">'
+                +   '<span style="background:' + typeColor + '20;color:' + typeColor + ';padding:1px 6px;border-radius:10px;font-size:10px;font-weight:600">' + v.type + '</span>'
+                +   '<div style="margin-top:2px;color:#374151">' + subject + '</div>'
+                + '</td>'
+                + '<td style="padding:5px 8px;border:1px solid #e5e7eb;font-size:11px;text-align:center;color:#374151">'
+                +   (dateStr ? '<div style="font-size:10px;color:#6b7280">' + dateStr + '</div>' : '')
+                +   '<div style="font-weight:600">' + timeStr + '</div>'
+                + '</td>'
+                + '<td style="padding:5px 8px;border:1px solid #e5e7eb;font-size:11px;text-align:center">'
+                +   '<span style="padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;background:'
+                +   (v.status==='Done'?'#dcfce7;color:#15803d':v.status==='Cancelled'?'#fee2e2;color:#dc2626':'#fef9c3;color:#92400e') + '">'
+                +   v.status + '</span>'
+                + '</td>'
+                + '</tr>';
+        }).join('');
+
+        return '<table style="width:100%;border-collapse:collapse;font-size:12px">'
+            + '<thead><tr style="background:#1f3864;color:#fff">'
+            + '<th style="padding:7px 8px;text-align:left;font-size:11px;border:1px solid #2e75b6">Visitor / Entity</th>'
+            + '<th style="padding:7px 8px;text-align:left;font-size:11px;border:1px solid #2e75b6">Personnel Visited</th>'
+            + '<th style="padding:7px 8px;text-align:left;font-size:11px;border:1px solid #2e75b6">Subject / Purpose</th>'
+            + '<th style="padding:7px 8px;text-align:center;font-size:11px;border:1px solid #2e75b6">Time</th>'
+            + '<th style="padding:7px 8px;text-align:center;font-size:11px;border:1px solid #2e75b6">Status</th>'
+            + '</tr></thead>'
+            + '<tbody>' + rows + '</tbody>'
+            + '</table>'
+            + '<p style="font-size:10px;color:#6b7280;margin-top:4px">Total visitors: <strong>' + visList.length + '</strong></p>';
+    }
+
+
 
     function buildSummaryTable(stats) {
         return '<table style="width:100%;border-collapse:collapse;margin-bottom:24px;">'
@@ -1504,12 +1564,19 @@
 
         var now = new Date();
         var subtitle = 'As of ' + now.toLocaleDateString('en-PH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+        var today = now.toISOString().split('T')[0];
+        var todayVisitors = visitors.filter(function(v) {
+            return v.dateTime && v.dateTime.startsWith(today);
+        });
+
         var content = sectionHead('I. SUMMARY')
             + buildSummaryTable({ total:total, pending:pending, completed:completed, rejected:rejected, overdue:overdue, collection:todayTotal })
             + sectionHead('II. TRANSACTIONS BY STAGE')
             + buildTransactionTable(transactions)
             + sectionHead('III. TODAY\'S COLLECTION')
-            + buildCollectionTable(todayPaidList);
+            + buildCollectionTable(todayPaidList)
+            + sectionHead('IV. VISITORS & BOOKINGS TODAY')
+            + buildVisitorTable(todayVisitors);
 
         document.getElementById('reportContent').innerHTML = wrapReport('DAILY STATUS REPORT', subtitle, content);
     }
@@ -1535,12 +1602,22 @@
         var mpList = monthPaid(ym);
         var mTotal = mpList.reduce(function(s,t){return s+t.payment.amount;},0);
 
+        var monthVisitors = visitors.filter(function(v) {
+            if (!v.dateTime) return false;
+            var d = new Date(v.dateTime);
+            return d.getFullYear() === year && d.getMonth() + 1 === month;
+        });
+        // Sort visitors by dateTime ascending
+        monthVisitors.sort(function(a,b){ return new Date(a.dateTime) - new Date(b.dateTime); });
+
         var content = sectionHead('I. SUMMARY')
             + buildSummaryTable({ total:total, pending:pending, completed:completed, rejected:rejected, overdue:overdue, collection:mTotal })
             + sectionHead('II. TRANSACTIONS BY STAGE')
             + buildTransactionTable(monthTx)
             + sectionHead('III. COLLECTION FOR THE MONTH')
-            + buildCollectionTable(mpList);
+            + buildCollectionTable(mpList)
+            + sectionHead('IV. VISITORS & BOOKINGS FOR THE MONTH')
+            + buildVisitorTable(monthVisitors);
 
         document.getElementById('monthlyContent').innerHTML = wrapReport('MONTHLY STATUS REPORT', monthLabel, content);
     }
