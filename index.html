@@ -706,7 +706,7 @@
         {no:95,name:"EXTENSION OF VALIDITY OF CERTIFICATE OF PUBLIC CONVENIENCE (CENTRAL OFFICE)",fee:"PHP 20,000.00 – PHP 50,000.00+",time:"43 Working Days"},
         {no:96,name:"PETITION FOR DROPPING OF UNIT/S (RFRO)",fee:"PHP 350.00",time:"15 Working Days"},
         {no:97,name:"PETITION FOR STORAGE OF UNIT'S PLATE (CENTRAL OFFICE)",fee:"PHP 500.00+",time:"18 Working Days"},
-        {no:98,name:"EXTENSION OF VALIDITY OF CERTIFICATE OF PUBLIC CONVENIENCE - RFRO",fee:"PHP 20,000.00 – PHP 50,000.00+",time:"46 Working Days, 7 Hours"},
+        {no:98,name:"EXTENSION OF VALIDITY OF CERTIFICATE OF PUBLIC CONVENIENCE - RFRO",fee:"PHP 610.00 (first 2 units) + PHP 70.00 per succeeding unit | Note: Standard fee only — additional fees and penalties not included",time:"46 Working Days, 7 Hours"},
         {no:99,name:"PETITION FOR DROPPING AND SUBSTITUTION OF UNIT/S (RFRO)",fee:"PHP 350.00",time:"11 Working Days, 1 Hour"},
         {no:100,name:"PREPARATION FOR PAYMENT OF INFRASTRUCTURE PROJECT (RFRO)",fee:"No Fee",time:"14 Working Days"},
         {no:101,name:"PETITION FOR STORAGE OF UNIT'S PLATE (RFRO)",fee:"PHP 500.00+",time:"18 Working Days"},
@@ -979,8 +979,14 @@
         var search = document.getElementById('searchBox').value.toLowerCase();
         var filter = document.getElementById('filterStage').value;
         var filtered = transactions.filter(function(t) {
-            return (t.referenceNumber.toLowerCase().includes(search) || t.applicantName.toLowerCase().includes(search))
-                && (filter === 'ALL' || t.stage === filter);
+            var ref  = (t.referenceNumber  || '').toLowerCase();
+            var name = (t.applicantName    || '').toLowerCase();
+            var ent  = (t.entityName       || '').toLowerCase();
+            var svc  = (t.requestType      || '').toLowerCase();
+            var matchSearch = !search || ref.includes(search) || name.includes(search)
+                           || ent.includes(search) || svc.includes(search);
+            var matchFilter = filter === 'ALL' || t.stage === filter;
+            return matchSearch && matchFilter;
         });
         document.getElementById('transactionCount').textContent = filtered.length;
         var list = document.getElementById('transactionList');
@@ -1242,6 +1248,7 @@
         if (tab === 'monthly') renderMonthlyReport();
         if (tab === 'collections') renderCollections();
         if (tab === 'visitors') renderVisitors();
+        if (tab === 'transactions') renderTransactions();
     }
 
     // ── DASHBOARD ────────────────────────────────────────────────────
