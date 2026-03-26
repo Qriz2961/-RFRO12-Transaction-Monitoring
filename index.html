@@ -564,7 +564,7 @@
     </div>
 
 <script>
-    const ADMIN_PIN = '1234';
+    const ADMIN_PIN = '9999'; // Master fallback PIN — always works even if roster is reset
     const STAGES = {
         PREPARED: 'Request Prepared',
         SUBMITTED: 'Submitted',
@@ -729,16 +729,27 @@
     let currentVisitFilter = 'ALL';
     let overdueVisible = false;
     let qrPrintData = null;
-    let roster = JSON.parse(localStorage.getItem('rfro_roster') || 'null') || [
-        {id:'u1',name:'Maria Santos',role:'Receiving',pin:'1111',active:true},
-        {id:'u2',name:'Ben Cabrera',role:'Receiving',pin:'1122',active:true},
-        {id:'u3',name:'Ana Gomez',role:'Releasing',pin:'5511',active:true},
-        {id:'u4',name:'Lea Reyes',role:'Cashier',pin:'2211',active:true},
-        {id:'u5',name:'Engr. Jose Ramos',role:'Processor',pin:'3311',active:true},
-        {id:'u6',name:'Atty. Carmen Villar',role:'Processor',pin:'3322',active:true},
-        {id:'u7',name:'Dir. Ramon Reyes',role:'Approver',pin:'4411',active:true},
-        {id:'u8',name:'Admin Officer',role:'Admin',pin:'9999',active:true}
-    ];
+    let roster = (function() {
+        var saved = JSON.parse(localStorage.getItem('rfro_roster') || 'null');
+        var defaults = [
+            {id:'u1',name:'Maria Santos',role:'Receiving',pin:'1111',active:true},
+            {id:'u2',name:'Ben Cabrera',role:'Receiving',pin:'1122',active:true},
+            {id:'u3',name:'Ana Gomez',role:'Releasing',pin:'5511',active:true},
+            {id:'u4',name:'Lea Reyes',role:'Cashier',pin:'2211',active:true},
+            {id:'u5',name:'Engr. Jose Ramos',role:'Processor',pin:'3311',active:true},
+            {id:'u6',name:'Atty. Carmen Villar',role:'Processor',pin:'3322',active:true},
+            {id:'u7',name:'Dir. Ramon Reyes',role:'Approver',pin:'4411',active:true},
+            {id:'u8',name:'Admin Officer',role:'Admin',pin:'9999',active:true}
+        ];
+        var r = saved || defaults;
+        // Auto-repair: if no active Admin entry exists, inject the default one
+        var hasAdmin = r.some(function(u){ return u.active && u.role === 'Admin'; });
+        if (!hasAdmin) {
+            r.push({id:'u8',name:'Admin Officer',role:'Admin',pin:'9999',active:true});
+            localStorage.setItem('rfro_roster', JSON.stringify(r));
+        }
+        return r;
+    }());
 
     // ── AGING ────────────────────────────────────────────────────────
     function getStageAging(t) {
@@ -1744,6 +1755,9 @@
     }
 
     function isAdminPin(pin) {
+        // Accept the master fallback PIN at all times
+        if (pin === ADMIN_PIN) return true;
+        // Also accept any active Admin in the roster
         return roster.some(function(u) { return u.active && u.pin === pin && u.role === 'Admin'; });
     }
 
