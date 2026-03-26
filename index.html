@@ -823,6 +823,7 @@
         // Load visitors from localStorage
         visitors = JSON.parse(localStorage.getItem('rfro_visitors') || '[]');
         await loadTransactions();
+        switchTab('dashboard');
     }
 
     async function loadTransactions() {
@@ -2143,8 +2144,11 @@
             drop.innerHTML = '<div class="combo-empty">No matching service type found — you may type a custom entry.</div>';
         } else {
             drop.innerHTML = results.map(function(t, i) {
-                return '<div class="combo-item" data-val="' + t.name.replace(/"/g,'&quot;') + '" data-idx="' + i + '"'
-                    + ' onmousedown="comboSelect('' + id + '','' + infoId + '',this)">'
+                return '<div class="combo-item"'
+                    + ' data-val="' + t.name.replace(/"/g,'&quot;') + '"'
+                    + ' data-comboid="' + id + '"'
+                    + ' data-infoid="' + (infoId || '') + '"'
+                    + ' onmousedown="comboSelectEl(this)">'
                     + '<span class="combo-no">' + t.no + '.</span>'
                     + comboHighlight(t.name, lo)
                     + '</div>';
@@ -2169,6 +2173,14 @@
 
     function comboSelect(id, infoId, el) {
         var val = el.getAttribute('data-val');
+        document.getElementById(id).value = val;
+        comboClose(id);
+        onServiceSelect(val, infoId);
+    }
+    function comboSelectEl(el) {
+        var id     = el.getAttribute('data-comboid');
+        var infoId = el.getAttribute('data-infoId');
+        var val    = el.getAttribute('data-val');
         document.getElementById(id).value = val;
         comboClose(id);
         onServiceSelect(val, infoId);
