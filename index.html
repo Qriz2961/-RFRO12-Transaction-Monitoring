@@ -750,12 +750,29 @@
     }
 
     function todayPaid() {
-        var today = new Date().toISOString().split('T')[0];
-        return paidList().filter(function(t) { return t.payment.date && t.payment.date.startsWith(today); });
-    }
+        var d = new Date();
+        var today = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+        return paidList().filter(function(t) {
+            if (!t.payment.date) return false;
+            var payDate = t.payment.date.substring(0, 10);
+            if (t.payment.date.length > 10) {
+                var pd = new Date(t.payment.date);
+                payDate = pd.getFullYear() + '-' + String(pd.getMonth()+1).padStart(2,'0') + '-' + String(pd.getDate()).padStart(2,'0');
+            }
+            return payDate === today;
+        });
 
+    }
     function monthPaid(ym) {
-        return paidList().filter(function(t) { return t.payment.date && t.payment.date.startsWith(ym); });
+        return paidList().filter(function(t) {
+            if (!t.payment.date) return false;
+            var payDate = t.payment.date.substring(0, 7); // YYYY-MM
+            if (t.payment.date.length > 10) {
+                var pd = new Date(t.payment.date);
+                payDate = pd.getFullYear() + '-' + String(pd.getMonth()+1).padStart(2,'0');
+            }
+            return payDate === ym;
+        });
     }
 
     function modeBreakdown(list) {
@@ -878,7 +895,7 @@
         document.getElementById('paymentModal').classList.remove('hidden');
     }
 
-    function closePaymentModal() {
+    async function closePaymentModal() {
         document.getElementById('paymentModal').classList.add('hidden');
         pendingPaymentStage = null;
     }
@@ -894,7 +911,7 @@
             mode: mode,
             or: document.getElementById('payOR').value.trim(),
             notes: document.getElementById('payNotes').value.trim(),
-            date: new Date().toISOString()
+            date: (function(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); })()
         };
         t.stage = pendingPaymentStage;
         t.history.push({
@@ -1154,7 +1171,7 @@
     }
 
     // ── DELETE ────────────────────────────────────────────────────────
-    function showDeleteForm() {
+    async function showDeleteForm() {
         var t = selectedTransaction;
         document.getElementById('deleteRefLabel').textContent = t.referenceNumber + ' — ' + t.applicantName;
         document.getElementById('deleteReason').value = '';
@@ -1162,7 +1179,7 @@
         document.getElementById('pinError').classList.add('hidden');
         document.getElementById('deleteModal').classList.remove('hidden');
     }
-    function closeDeleteForm() { document.getElementById('deleteModal').classList.add('hidden'); }
+    async function closeDeleteForm() { document.getElementById('deleteModal').classList.add('hidden'); }
 
     async function confirmDelete() {
         var reason = document.getElementById('deleteReason').value.trim();
@@ -1842,7 +1859,7 @@
         document.getElementById('stageModal').classList.remove('hidden');
     }
 
-    function closeStageModal() {
+    async function closeStageModal() {
         document.getElementById('stageModal').classList.add('hidden');
     }
 
