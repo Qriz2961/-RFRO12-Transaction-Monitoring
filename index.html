@@ -125,7 +125,8 @@
                     <option value="ALL">All Stages</option>
                 </select>
                 <button onclick="showAddForm()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium">+ New Request</button>
-                <button onclick="exportData()" class="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700">&#128229; Export</button>
+                <button onclick="exportCSV()" class="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700 font-medium">&#128202; Export Excel</button>
+                <button onclick="exportData()" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 text-sm">&#128229; JSON</button>
             </div>
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="lg:col-span-2 bg-white rounded-lg shadow">
@@ -1393,6 +1394,106 @@
         a.download = 'transactions-' + new Date().toISOString().split('T')[0] + '.json';
         a.click();
         URL.revokeObjectURL(url);
+    }
+
+    function exportCSV() {
+        if (!transactions.length) { alert('No transactions to export.'); return; }
+
+        // CSV helper — wraps value in quotes and escapes internal quotes
+        function csv(val) {
+            var s = (val === null || val === undefined) ? '' : String(val);
+            s = s.replace(/"/g, '""');
+            return '"' + s + '"';
+        }
+
+        // Column headers — audit-ready layout
+        var headers = [
+            'Reference Number',
+            'Date Received',
+            'Applicant Name',
+            'Entity / Company',
+            'Service Type',
+            'Estimated Fee',
+            'Current Stage',
+            'Date Completed',
+            'Total Days',
+            'Payment Amount',
+            'OR Number',
+            'Payment Mode',
+            'Payment Date',
+            'Receiving Staff',
+            'Status',
+            'Contact Number',
+            'Email',
+            'Overdue (Y/N)'
+        ];
+
+        var rows = transactions.map(function(t) {
+            var pmt = t.payment || {};
+
+            // Get date completed from history
+            var completedEntry = t.history.slice().reverse().find(function(h) {
+                return h.stage === STAGES.COMPLETED || h.stage === STAGES.QR_PRINTED;
+            });
+            var dateCompleted = completedEntry
+                ? new Date(completedEntry.timestamp).toLocaleDateString('en-PH')
+                : '';
+
+            // Get payment date from history
+            var payEntry = t.history.find(function(h) {
+                return h.stage === STAGES.PAYMENT_COMPLETED;
+            });
+            var payDate = payEntry
+                ? new Date(payEntry.timestamp).toLocaleDateString('en-PH')
+                : (pmt.date ? new Date(pmt.date).toLocaleDateString('en-PH') : '');
+
+            // Get receiving staff from first history entry
+            var receivingStaff = t.history && t.history[0] ? (t.history[0].by || '') : '';
+
+            // Status: Completed / In Progress / Not Accepted
+            var status = t.stage === STAGES.COMPLETED || t.stage === STAGES.QR_PRINTED
+                ? 'Completed'
+                : t.stage === STAGES.NOT_ACCEPTED
+                ? 'Not Accepted'
+                : 'In Progress';
+
+            return [
+                csv(t.referenceNumber),
+                csv(t.dateReceived),
+                csv(t.applicantName),
+                csv(t.entityName || ''),
+                csv(t.requestType),
+                csv(t.estimatedFee || ''),
+                csv(t.stage),
+                csv(dateCompleted),
+                csv(getTotalDays(t)),
+                csv(pmt.amount ? pmt.amount : ''),
+                csv(pmt.or || ''),
+                csv(pmt.mode || ''),
+                csv(payDate),
+                csv(receivingStaff),
+                csv(status),
+                csv(t.contactNumber || ''),
+                csv(t.email || ''),
+                csv(isOverdue(t) ? 'Y' : 'N')
+            ].join(',');
+        });
+
+        // Add BOM for Excel to correctly read UTF-8 (handles special chars like ₱)
+        var bom = '\uFEFF';
+        var csvContent = bom + headers.map(csv).join(',') + '\n' + rows.join('\n');
+
+        var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'RFRO-XIII-Transactions-' + new Date().toISOString().split('T')[0] + '.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+
+        // Show confirmation
+        var count = transactions.length;
+        alert('Export complete!\n' + count + ' transaction' + (count !== 1 ? 's' : '') + ' exported to Excel CSV.\nFile saved to your Downloads folder.');
     }
 
     // ── REPORT HELPERS ────────────────────────────────────────────────
