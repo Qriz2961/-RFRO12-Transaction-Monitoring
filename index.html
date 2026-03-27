@@ -1819,7 +1819,7 @@ const ENTITY_MASTER = [{"caseNo":"23-03-0135","denom":"PUJ","name":"AJODTRANSCO"
 
     // ── ENTITY AUTOCOMPLETE ───────────────────────────────────────────
     function getEntitySuggestions(q) {
-        if (!q || q.length < 2) return [];
+        if (!q || q.length < 2) return { master: [], custom: [] };
         var lo = q.toLowerCase();
         // Search TSE master by name, fullName, caseNo, route
         var masterMatches = ENTITY_MASTER.filter(function(e) {
