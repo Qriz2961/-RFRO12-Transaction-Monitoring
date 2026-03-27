@@ -375,7 +375,7 @@
             <div id="settingsPanel" class="hidden p-6">
                 <div class="flex justify-between items-center mb-4">
                     <div class="font-semibold text-gray-700">Personnel Roster (<span id="rosterCount">0</span>)</div>
-                    <button onclick="showAddPersonnel()" class="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-sm hover:bg-blue-700">+ Add Personnel</button>
+                    <div style="display:flex;gap:6px"><button onclick="clearPlaceholders()" style="font-size:11px;padding:4px 10px;border:1px solid #f97316;color:#c2410c;border-radius:6px;background:#fff;cursor:pointer">&#128465; Clear Placeholders</button><button onclick="showAddPersonnel()" class="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-sm hover:bg-blue-700">+ Add Personnel</button></div>
                 </div>
                 <div id="addPersonnelForm" class="hidden bg-blue-50 rounded-lg p-4 mb-4 space-y-3">
                     <div class="font-semibold text-sm text-blue-700">New Personnel</div>
@@ -2399,6 +2399,24 @@ function onEntityInput(val, inputId, dropId) {
         roster[i].active = !roster[i].active;
         localStorage.setItem('rfro_roster', JSON.stringify(roster));
         renderRoster();
+    }
+    function deleteRosterUser(i) {
+        var u = roster[i];
+        if (!u || u.role === 'Admin') return;
+        if (!confirm('Remove ' + u.name + ' from the roster?')) return;
+        roster.splice(i, 1);
+        localStorage.setItem('rfro_roster', JSON.stringify(roster));
+        renderRoster();
+    }
+    function clearPlaceholders() {
+        var names = ['Maria Santos', 'Ben Cabrera', 'Ana Gomez', 'Lea Reyes', 'Engr. Jose Ramos', 'Atty. Carmen Villar', 'Dir. Ramon Reyes'];
+        var before = roster.length;
+        roster = roster.filter(function(u) { return !names.includes(u.name); });
+        var removed = before - roster.length;
+        if (removed === 0) { alert('No placeholders found — already cleared.'); return; }
+        localStorage.setItem('rfro_roster', JSON.stringify(roster));
+        renderRoster();
+        alert(removed + ' placeholder(s) removed. Now add your real RFRO XII staff.');
     }
 
     // ── COMBO DROPDOWN — Request Type ────────────────────────────────
