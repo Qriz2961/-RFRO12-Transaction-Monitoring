@@ -121,10 +121,17 @@
         <!-- TRANSACTIONS -->
         <div id="transactionsView" style="display:none;">
             <div class="flex gap-4 mb-6 flex-wrap">
-                <input type="text" id="searchBox" placeholder="Search by name or reference..." class="flex-1 min-w-64 px-4 py-2 border border-gray-300 rounded-lg">
+                <input type="text" id="searchBox" placeholder="Search by name, reference, entity or service..." class="flex-1 min-w-64 px-4 py-2 border border-gray-300 rounded-lg">
                 <select id="filterStage" class="px-4 py-2 border border-gray-300 rounded-lg">
                     <option value="ALL">All Stages</option>
                 </select>
+                <input type="date" id="filterDateFrom" title="Date From" class="px-3 py-2 border border-gray-300 rounded-lg text-sm" onchange="renderTransactions()">
+                <input type="date" id="filterDateTo" title="Date To" class="px-3 py-2 border border-gray-300 rounded-lg text-sm" onchange="renderTransactions()">
+                <select id="filterSort" class="px-3 py-2 border border-gray-300 rounded-lg text-sm" onchange="renderTransactions()">
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                </select>
+                <button onclick="clearDateFilter()" class="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50" title="Clear date filter">&#10005; Clear</button>
                 <button onclick="showAddForm()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium">+ New Request</button>
                 <button onclick="exportCSV()" class="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700 font-medium">&#128202; Export Excel</button>
                 <button onclick="exportData()" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 text-sm">&#128229; JSON</button>
@@ -826,7 +833,8 @@ const ENTITY_MASTER = [{"caseNo":"23-03-0135","denom":"PUJ","name":"AJODTRANSCO"
                 bar.style.background = '#fee2e2';
                 bar.style.color = '#991b1b';
                 bar.style.border = '1px solid #fca5a5';
-                bar.innerHTML = '&#9888;&nbsp; <strong>API Connection Failed.</strong> Cannot reach the Cloudflare backend. Check your internet connection or verify the Worker URL: <code style="background:#fecaca;padding:1px 4px;border-radius:3px">' + API + '</code>';
+                bar.innerHTML = '&#9888;&nbsp; <strong>API Connection Failed (' + e.message + ').</strong> Cannot reach: <code style="background:#fecaca;padding:2px 6px;border-radius:3px">' + API + '</code>'
+                    + '<br>&#128161; Check: (1) Internet connection is active &nbsp;|&nbsp; (2) Cloudflare Worker is deployed &nbsp;|&nbsp; (3) KV binding named TRANSACTIONS is set';
             }
         }
         renderDashboard();
@@ -860,6 +868,14 @@ const ENTITY_MASTER = [{"caseNo":"23-03-0135","denom":"PUJ","name":"AJODTRANSCO"
     }
 
     function showAddForm() { document.getElementById('addModal').classList.remove('hidden'); }
+    function clearDateFilter() {
+        var df = document.getElementById('filterDateFrom');
+        var dt = document.getElementById('filterDateTo');
+        if (df) df.value = '';
+        if (dt) dt.value = '';
+        renderTransactions();
+    }
+
     function closeAddForm() {
         document.getElementById('addModal').classList.add('hidden');
         ['applicantName','entityName','contactNumber','email','requestType'].forEach(function(id) {
@@ -958,6 +974,10 @@ const ENTITY_MASTER = [{"caseNo":"23-03-0135","denom":"PUJ","name":"AJODTRANSCO"
     function renderTransactions() {
         var search = document.getElementById('searchBox').value.toLowerCase();
         var filter = document.getElementById('filterStage').value;
+        var dateFrom = document.getElementById('filterDateFrom') ? document.getElementById('filterDateFrom').value : '';
+        var dateTo   = document.getElementById('filterDateTo')   ? document.getElementById('filterDateTo').value   : '';
+        var sortMode = document.getElementById('filterSort')      ? document.getElementById('filterSort').value      : 'newest';
+
         var filtered = transactions.filter(function(t) {
             var ref  = (t.referenceNumber  || '').toLowerCase();
             var name = (t.applicantName    || '').toLowerCase();
@@ -965,8 +985,18 @@ const ENTITY_MASTER = [{"caseNo":"23-03-0135","denom":"PUJ","name":"AJODTRANSCO"
             var svc  = (t.requestType      || '').toLowerCase();
             var matchSearch = !search || ref.includes(search) || name.includes(search)
                            || ent.includes(search) || svc.includes(search);
-            var matchFilter = filter === 'ALL' || t.stage === filter;
-            return matchSearch && matchFilter;
+            var matchStage  = filter === 'ALL' || t.stage === filter;
+            var txDate = t.dateReceived || '';
+            var matchFrom = !dateFrom || txDate >= dateFrom;
+            var matchTo   = !dateTo   || txDate <= dateTo;
+            return matchSearch && matchStage && matchFrom && matchTo;
+        });
+
+        // Sort
+        filtered.sort(function(a, b) {
+            var da = a.dateReceived || a.createdAt || '';
+            var db = b.dateReceived || b.createdAt || '';
+            return sortMode === 'oldest' ? da.localeCompare(db) : db.localeCompare(da);
         });
         document.getElementById('transactionCount').textContent = filtered.length;
         var list = document.getElementById('transactionList');
