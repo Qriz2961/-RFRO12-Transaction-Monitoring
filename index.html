@@ -1847,9 +1847,8 @@ function onEntityInput(val, inputId, dropId) {
         }
         var html = '';
         result.master.forEach(function(e) {
-            // Store only the array index — no JSON in HTML, much faster
             html += '<div class="ac-item" style="border-left:3px solid #2e75b6;padding-left:10px"'
-                + ' onmousedown="pickEntityFull(event,\'' + inputId + '\',\'' + dropId + '\')"'
+                + ' onmousedown="pickEntityFull(event,' + "'" + inputId + "'" + ',' + "'" + dropId + "'" + ')"'
                 + ' data-eidx="' + e._idx + '">'
                 + '<div style="font-weight:600;font-size:13px;color:#1f3864">' + e.name + '</div>'
                 + '<div style="font-size:11px;color:#2e75b6">' + e.caseNo + ' &bull; ' + e.denom
@@ -1858,7 +1857,9 @@ function onEntityInput(val, inputId, dropId) {
                 + '</div>';
         });
         result.custom.forEach(function(s) {
-            html += '<div class="ac-item" onmousedown="pickEntity(\'' + s.replace(/'/g,"\\'\" ) + '\',\'' + inputId + '\',\'' + dropId + '\')">'
+            var safeName = s.split("'").join('&#39;');
+            html += '<div class="ac-item" onmousedown="pickEntity(this,' + "'" + inputId + "'" + ',' + "'" + dropId + "'" + ')"'
+                + ' data-val="' + safeName + '">'
                 + '<div style="font-size:13px">&#128203; ' + s + '</div>'
                 + '<div style="font-size:10px;color:#9ca3af">From past transaction</div>'
                 + '</div>';
@@ -1867,8 +1868,9 @@ function onEntityInput(val, inputId, dropId) {
         drop.classList.remove('hidden');
     }
 
-    function pickEntity(val, inputId, dropId) {
-        document.getElementById(inputId).value = val;
+    function pickEntity(elOrVal, inputId, dropId) {
+        var val = (typeof elOrVal === 'string') ? elOrVal : elOrVal.getAttribute('data-val');
+        document.getElementById(inputId).value = val || '';
         hideAC(dropId);
     }
     function pickEntityFull(evt, inputId, dropId) {
