@@ -1419,7 +1419,7 @@ const ENTITY_MASTER = [{"caseNo":"23-03-0135","denom":"PUJ","name":"AJODTRANSCO"
         // CSV helper — wraps value in quotes and escapes internal quotes
         function csv(val) {
             var s = (val === null || val === undefined) ? '' : String(val);
-            s = s.replace(/"/g, '""');
+            s = s.replace(/\"/g, '""');
             return '"' + s + '"';
         }
 
