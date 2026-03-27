@@ -452,6 +452,15 @@
                     <input type="email" id="email" class="w-full px-3 py-2 border rounded-lg">
                 </div>
             </div>
+            <!-- UNITS SECTION -->
+            <div class="mt-4 border-t pt-4">
+                <div class="flex justify-between items-center mb-2">
+                    <div class="text-sm font-semibold text-gray-700">&#128663; Units Involved <span class="text-xs font-normal text-gray-400">(optional)</span></div>
+                    <button type="button" onclick="addUnitRow()" class="text-xs px-3 py-1 bg-blue-50 text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-100">+ Add Unit</button>
+                </div>
+                <div id="unitRowsContainer" class="space-y-2"></div>
+                <div id="unitRowsEmpty" class="text-xs text-gray-400 italic py-1">No units added yet. Click "+ Add Unit" to include unit details.</div>
+            </div>
             <div class="flex gap-3 mt-6">
                 <button onclick="closeAddForm()" class="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
                 <button onclick="addTransaction()" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Create</button>
@@ -877,6 +886,7 @@ const ENTITY_MASTER = [{"caseNo":"23-03-0135","denom":"PUJ","name":"AJODTRANSCO"
     }
 
     function closeAddForm() {
+        _unitRows = []; renderUnitRows();
         document.getElementById('addModal').classList.add('hidden');
         ['applicantName','entityName','contactNumber','email','requestType'].forEach(function(id) {
             document.getElementById(id).value = '';
@@ -906,6 +916,7 @@ const ENTITY_MASTER = [{"caseNo":"23-03-0135","denom":"PUJ","name":"AJODTRANSCO"
             email: document.getElementById('email').value.trim(),
             dateReceived: date,
             stage: STAGES.PREPARED,
+            units: collectAllUnits(),
             createdAt: new Date().toISOString(),
             history: [{ stage: STAGES.PREPARED, timestamp: new Date().toISOString(), notes: 'Transaction created' }]
         };
@@ -1113,6 +1124,7 @@ const ENTITY_MASTER = [{"caseNo":"23-03-0135","denom":"PUJ","name":"AJODTRANSCO"
             + '</div>'
             + feeHTML
             + agingHTML
+            + (t.units && t.units.length ? buildUnitTable(t.units) : '')
             + payHTML
             + updateHTML
             + qrHTML
@@ -2142,6 +2154,84 @@ function onEntityInput(val, inputId, dropId) {
         if (!w) { alert('Please allow pop-ups to print.'); return; }
         w.document.write(html);
         w.document.close();
+    }
+
+
+    // ── UNIT MANAGEMENT ───────────────────────────────────────────────────────
+    var _unitRows = [];
+
+    function addUnitRow(unit) {
+        var u = unit || { plate:'', engine:'', chassis:'', orNo:'', orExpiry:'', lastConfirmed:'' };
+        var idx = _unitRows.length;
+        _unitRows.push(u);
+        renderUnitRows();
+    }
+
+    function removeUnitRow(idx) {
+        _unitRows.splice(idx, 1);
+        renderUnitRows();
+    }
+
+    function getUnitRowData(idx) {
+        var inputs = ['plate','engine','chassis','orNo','orExpiry','lastConfirmed'];
+        inputs.forEach(function(field) {
+            var el = document.getElementById('unit_' + field + '_' + idx);
+            if (el) _unitRows[idx][field] = el.value.trim();
+        });
+    }
+
+    function collectAllUnits() {
+        for (var i = 0; i < _unitRows.length; i++) { getUnitRowData(i); }
+        return _unitRows.filter(function(u) {
+            return u.plate || u.engine || u.chassis;
+        }).map(function(u) {
+            // Compute years delinquent from lastConfirmed
+            var yearsDelinquent = 0;
+            if (u.lastConfirmed) {
+                var last = new Date(u.lastConfirmed);
+                var now  = new Date();
+                yearsDelinquent = Math.max(0, Math.floor((now - last) / (365.25 * 24 * 3600 * 1000)));
+            }
+            return {
+                plate:          u.plate,
+                engine:         u.engine,
+                chassis:        u.chassis,
+                orNo:           u.orNo,
+                orExpiry:       u.orExpiry,
+                lastConfirmed:  u.lastConfirmed,
+                yearsDelinquent: yearsDelinquent,
+                penalty:        yearsDelinquent > 0 ? 'Pending' : 'None'
+            };
+        });
+    }
+
+    function renderUnitRows() {
+        var container = document.getElementById('unitRowsContainer');
+        var emptyMsg  = document.getElementById('unitRowsEmpty');
+        if (!container) return;
+        if (_unitRows.length === 0) {
+            container.innerHTML = '';
+            if (emptyMsg) emptyMsg.style.display = 'block';
+            return;
+        }
+        if (emptyMsg) emptyMsg.style.display = 'none';
+        container.innerHTML = _unitRows.map(function(u, i) {
+            return '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;position:relative">'                + '<button onclick="removeUnitRow(' + i + ')" style="position:absolute;top:6px;right:8px;background:none;border:none;color:#9ca3af;cursor:pointer;font-size:14px" title="Remove unit">&#10005;</button>'                + '<div style="font-size:11px;font-weight:700;color:#1e3a5f;margin-bottom:6px">UNIT ' + (i+1) + '</div>'                + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:6px">'                + '<div><div style="font-size:10px;color:#6b7280;margin-bottom:2px">Plate Number</div><input id="unit_plate_' + i + '" value="' + (u.plate||'') + '" placeholder="ABC 1234" style="width:100%;padding:4px 8px;border:1px solid #d1d5db;border-radius:5px;font-size:12px;box-sizing:border-box"></div>'                + '<div><div style="font-size:10px;color:#6b7280;margin-bottom:2px">Engine No.</div><input id="unit_engine_' + i + '" value="' + (u.engine||'') + '" placeholder="Engine #" style="width:100%;padding:4px 8px;border:1px solid #d1d5db;border-radius:5px;font-size:12px;box-sizing:border-box"></div>'                + '<div><div style="font-size:10px;color:#6b7280;margin-bottom:2px">Chassis No.</div><input id="unit_chassis_' + i + '" value="' + (u.chassis||'') + '" placeholder="Chassis #" style="width:100%;padding:4px 8px;border:1px solid #d1d5db;border-radius:5px;font-size:12px;box-sizing:border-box"></div>'                + '</div>'                + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">'                + '<div><div style="font-size:10px;color:#6b7280;margin-bottom:2px">LTO OR No.</div><input id="unit_orNo_' + i + '" value="' + (u.orNo||'') + '" placeholder="OR Number" style="width:100%;padding:4px 8px;border:1px solid #d1d5db;border-radius:5px;font-size:12px;box-sizing:border-box"></div>'                + '<div><div style="font-size:10px;color:#6b7280;margin-bottom:2px">LTO OR Expiry</div><input id="unit_orExpiry_' + i + '" type="date" value="' + (u.orExpiry||'') + '" style="width:100%;padding:4px 8px;border:1px solid #d1d5db;border-radius:5px;font-size:12px;box-sizing:border-box"></div>'                + '<div><div style="font-size:10px;color:#6b7280;margin-bottom:2px">Last Confirmed</div><input id="unit_lastConfirmed_' + i + '" type="date" value="' + (u.lastConfirmed||'') + '" style="width:100%;padding:4px 8px;border:1px solid #d1d5db;border-radius:5px;font-size:12px;box-sizing:border-box"></div>'                + '</div>'                + '</div>';
+        }).join('');
+    }
+
+    function buildUnitTable(units) {
+        if (!units || !units.length) return '';
+        var rows = units.map(function(u, i) {
+            var delinqBg = u.yearsDelinquent > 0 ? '#fef2f2' : '#f0fdf4';
+            var delinqColor = u.yearsDelinquent > 0 ? '#dc2626' : '#16a34a';
+            return '<tr style="background:' + (i%2===0?'#fff':'#f8fafc') + '">'                + '<td style="padding:5px 8px;border:1px solid #e5e7eb;font-size:11px;font-weight:600">' + (u.plate||'—') + '</td>'                + '<td style="padding:5px 8px;border:1px solid #e5e7eb;font-size:10px;color:#374151">' + (u.engine||'—') + '</td>'                + '<td style="padding:5px 8px;border:1px solid #e5e7eb;font-size:10px;color:#374151">' + (u.chassis||'—') + '</td>'                + '<td style="padding:5px 8px;border:1px solid #e5e7eb;font-size:10px">' + (u.orNo||'—') + '</td>'                + '<td style="padding:5px 8px;border:1px solid #e5e7eb;font-size:10px">' + (u.orExpiry||'—') + '</td>'                + '<td style="padding:5px 8px;border:1px solid #e5e7eb;font-size:10px">' + (u.lastConfirmed||'—') + '</td>'                + '<td style="padding:5px 8px;border:1px solid #e5e7eb;font-size:11px;font-weight:700;text-align:center;background:' + delinqBg + ';color:' + delinqColor + '">' + (u.yearsDelinquent > 0 ? u.yearsDelinquent + ' yr(s)' : 'Current') + '</td>'                + '<td style="padding:5px 8px;border:1px solid #e5e7eb;font-size:10px;text-align:center;color:#c55a11;font-weight:600">' + (u.penalty||'—') + '</td>'                + '</tr>';
+        }).join('');
+        var delinqCount = units.filter(function(u){ return u.yearsDelinquent > 0; }).length;
+        var summary = delinqCount > 0
+            ? '<div style="margin-top:6px;padding:5px 10px;background:#fef2f2;border:1px solid #fecaca;border-radius:5px;font-size:11px;color:#dc2626;font-weight:600">&#9888; ' + delinqCount + ' of ' + units.length + ' unit(s) are delinquent. Penalty amounts are Pending — to be computed upon assessment.</div>'
+            : '<div style="margin-top:6px;padding:5px 10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:5px;font-size:11px;color:#16a34a">&#10003; All ' + units.length + ' unit(s) are current.</div>';
+        return '<div style="margin-bottom:12px">'            + '<div style="font-size:12px;font-weight:700;color:#1e3a5f;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">'            + '<span>&#128663; Units Involved (' + units.length + ')</span>'            + '</div>'            + '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px">'            + '<thead><tr style="background:#1f3864;color:#fff">'            + '<th style="padding:6px 8px;text-align:left;border:1px solid #2e75b6;white-space:nowrap">Plate No.</th>'            + '<th style="padding:6px 8px;text-align:left;border:1px solid #2e75b6;white-space:nowrap">Engine No.</th>'            + '<th style="padding:6px 8px;text-align:left;border:1px solid #2e75b6;white-space:nowrap">Chassis No.</th>'            + '<th style="padding:6px 8px;text-align:left;border:1px solid #2e75b6;white-space:nowrap">LTO OR No.</th>'            + '<th style="padding:6px 8px;text-align:left;border:1px solid #2e75b6;white-space:nowrap">OR Expiry</th>'            + '<th style="padding:6px 8px;text-align:left;border:1px solid #2e75b6;white-space:nowrap">Last Confirmed</th>'            + '<th style="padding:6px 8px;text-align:center;border:1px solid #2e75b6;white-space:nowrap">Delinquency</th>'            + '<th style="padding:6px 8px;text-align:center;border:1px solid #2e75b6;white-space:nowrap">Penalty</th>'            + '</tr></thead>'            + '<tbody>' + rows + '</tbody></table></div>'            + summary            + '</div>';
     }
 
     // ── VISITORS MODULE ───────────────────────────────────────────────
