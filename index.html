@@ -203,6 +203,52 @@
 
         <!-- VISITORS & BOOKINGS -->
         <div id="visitorsView" style="display:none;">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
+                    <div class="text-3xl font-bold text-blue-700" id="vd-total">0</div>
+                    <div class="text-xs text-gray-500 mt-1">Total Visits</div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
+                    <div class="text-3xl font-bold text-green-700" id="vd-done">0</div>
+                    <div class="text-xs text-gray-500 mt-1">&#10003; Completed</div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4 border-l-4 border-orange-500">
+                    <div class="text-3xl font-bold text-orange-600" id="vd-followup">0</div>
+                    <div class="text-xs text-gray-500 mt-1">&#8635; Follow-up Pending</div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4 border-l-4 border-red-500">
+                    <div class="text-3xl font-bold text-red-600" id="vd-overdue">0</div>
+                    <div class="text-xs text-gray-500 mt-1">&#9888; Follow-up Overdue</div>
+                </div>
+            </div>
+            <div id="vd-overdue-panel" class="hidden mb-4 bg-red-50 border border-red-200 rounded-lg p-3">
+                <div class="text-sm font-bold text-red-700 mb-2">&#9888; Overdue Follow-ups</div>
+                <div id="vd-overdue-list"></div>
+            </div>
+            <!-- VISITOR SUB-DASHBOARD -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
+                    <div class="text-2xl font-bold text-blue-700" id="vd-total">0</div>
+                    <div class="text-xs text-gray-500 mt-1">Total Visits</div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
+                    <div class="text-2xl font-bold text-green-700" id="vd-done">0</div>
+                    <div class="text-xs text-gray-500 mt-1">Completed (Done)</div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4 border-l-4 border-orange-500">
+                    <div class="text-2xl font-bold text-orange-600" id="vd-followup">0</div>
+                    <div class="text-xs text-gray-500 mt-1">Follow-up Pending</div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4 border-l-4 border-red-500">
+                    <div class="text-2xl font-bold text-red-600" id="vd-overdue">0</div>
+                    <div class="text-xs text-gray-500 mt-1">Follow-up Overdue</div>
+                </div>
+            </div>
+            <!-- OVERDUE FOLLOW-UPS PANEL -->
+            <div id="vd-overdue-panel" class="hidden mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+                <div class="text-sm font-semibold text-red-700 mb-2">&#9888; Overdue Follow-ups</div>
+                <div id="vd-overdue-list" class="space-y-2"></div>
+            </div>
             <div class="flex gap-4 mb-6 flex-wrap items-center justify-between">
                 <div class="flex gap-2 flex-wrap" id="visitTypeFilters">
                     <button onclick="setVisitFilter('ALL')" id="vf-ALL" class="px-4 py-2 rounded-full text-sm font-medium bg-gray-700 text-white">All</button>
@@ -582,6 +628,57 @@
             </div>
         </div>
     </div>
+
+    <!-- VISIT SUMMARY MODAL -->
+    <div id="visitSummaryModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg max-w-lg w-full p-6 max-h-screen overflow-y-auto">
+            <h2 class="text-lg font-bold mb-1 text-indigo-700">&#128221; Visit Outcome Summary</h2>
+            <p id="vsum-ref" class="text-xs text-gray-400 mb-4"></p>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Summary / Outcome <span class="text-red-500">*</span></label>
+                    <textarea id="vsum-outcome" rows="3" placeholder="Describe what was discussed and the result..." class="w-full px-3 py-2 border rounded-lg text-sm"></textarea>
+                    <div class="mt-1 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-700">
+                        &#128161; <strong>Reminder:</strong> Note action items discussed and any documents submitted or received.
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Next Steps / Follow-up Instructions</label>
+                    <textarea id="vsum-nextsteps" rows="2" placeholder="What needs to happen next? Who is responsible?" class="w-full px-3 py-2 border rounded-lg text-sm"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Handled By</label>
+                        <select id="vsum-handler" class="w-full px-3 py-2 border rounded-lg text-sm">
+                            <option value="">— Select personnel —</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Follow-up Due Date</label>
+                        <input type="date" id="vsum-followupdate" class="w-full px-3 py-2 border rounded-lg text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Mark Visit As</label>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="setVsumStatus('Done')" id="vsum-done-btn"
+                            class="flex-1 py-2 rounded-lg text-sm font-semibold border-2 border-green-300 text-green-700 hover:bg-green-50">
+                            &#10003; Done
+                        </button>
+                        <button type="button" onclick="setVsumStatus('Follow-up')" id="vsum-followup-btn"
+                            class="flex-1 py-2 rounded-lg text-sm font-semibold border-2 border-orange-300 text-orange-700 hover:bg-orange-50">
+                            &#128337; Follow-up
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-5">
+                <button onclick="closeVisitSummary()" class="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50 text-sm">Cancel</button>
+                <button onclick="saveVisitSummary()" class="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium text-sm">&#128190; Save Summary</button>
+            </div>
+        </div>
+    </div>
+
 
 <script>
     const ADMIN_PIN = '9999'; // Master fallback PIN — always works even if roster is reset
@@ -1997,11 +2094,10 @@ const ENTITY_MASTER = [
         var contentId = type === 'monthly' ? 'monthlyContent' : 'reportContent';
         var html = document.getElementById(contentId).innerHTML;
         var win = window.open('', '_blank');
-        win.document.write('<html><head><title>RFRO XIII Report</title>'
+        win.document.write('<html><head><title>RFRO XII Report</title>'
             + '<style>body{font-family:Arial,sans-serif;margin:20px;}@media print{body{margin:0;}}</style>'
-            + '</head><body>' + html + '</body></html>');
+                + '</head><body>' + html + '</body></html>');
         win.document.close();
-        win.focus();
         setTimeout(function() { win.print(); }, 400);
     }
 
@@ -2655,12 +2751,13 @@ function onEntityInput(val, inputId, dropId) {
             return v.type === currentVisitFilter;
         }).slice().reverse();
 
+        visitorSubDashboard();
         var listEl = document.getElementById('visitorList');
         if (!filtered.length) {
             listEl.innerHTML = '<div class="p-8 text-center text-gray-400">No records found.</div>';
             return;
         }
-        var statusColors = { Waiting:'bg-orange-100 text-orange-700', Confirmed:'bg-blue-100 text-blue-700', 'In Progress':'bg-purple-100 text-purple-700', Done:'bg-green-100 text-green-700', Cancelled:'bg-gray-100 text-gray-500' };
+        var statusColors = { Waiting:'bg-orange-100 text-orange-700', Confirmed:'bg-blue-100 text-blue-700', 'In Progress':'bg-purple-100 text-purple-700', Done:'bg-green-100 text-green-700', 'Follow-up':'bg-orange-200 text-orange-800', Cancelled:'bg-gray-100 text-gray-500' };
         var typeIcons = { 'Walk-in':'🚶','Booked':'📅','Complaint':'⚠️','Assistance':'💬','Follow-up':'🔗' };
         listEl.innerHTML = '<div class="divide-y">' + filtered.map(function(v) {
             var sc = statusColors[v.status] || 'bg-gray-100 text-gray-600';
@@ -2683,13 +2780,89 @@ function onEntityInput(val, inputId, dropId) {
                 + '<div class="text-right shrink-0">'
                 + '<div class="text-xs text-gray-400">' + dt.toLocaleDateString('en-PH',{month:'short',day:'2-digit'}) + '</div>'
                 + '<div class="text-xs text-gray-400">' + dt.toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'}) + '</div>'
-                + (v.status !== 'Done' && v.status !== 'Cancelled' ? '<div class="flex gap-1 mt-1 justify-end">'
+                + (v.summary ? '<div class="mt-2 p-2 bg-indigo-50 border border-indigo-100 rounded text-xs text-indigo-700">'                    + '<strong>Summary:</strong> ' + v.summary.outcome.substring(0,120)                    + (v.summary.nextSteps ? '<br><strong>Next:</strong> ' + v.summary.nextSteps.substring(0,80) : '')                    + (v.summary.followUpDate ? '<br><strong style="color:#c2410c">Follow-up:</strong> ' + v.summary.followUpDate + (v.summary.followUpTime ? ' ' + v.summary.followUpTime : '') : '')                    + '</div>' : '')                + (v.status === 'Done' || v.status === 'Follow-up' ? '<button onclick="openVisitSummary(\'' + v.id + '\')" class="text-xs px-2 py-0.5 mt-1 border border-indigo-300 text-indigo-600 rounded hover:bg-indigo-50 w-full">&#128221; View/Edit Summary</button>' : '')                + (v.status !== 'Done' && v.status !== 'Cancelled' ? '<div class="flex gap-1 mt-1 justify-end">'
                     + (v.status === 'Waiting' ? '<button onclick="updateVisitorStatus(\'' + v.id + '\',\'In Progress\')" class="text-xs px-2 py-1 bg-purple-500 text-white rounded hover:bg-purple-600">Start</button>' : '')
-                    + '<button onclick="updateVisitorStatus(\'' + v.id + '\',\'Done\')" class="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700">Done</button>'
+                    + '<button onclick="openVisitSummary(\'' + v.id + '\')" class="text-xs px-2 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700">&#128221; Summarize</button>'
                     + '</div>' : '')
                 + '</div>'
                 + '</div></div>';
         }).join('') + '</div>';
+    }
+
+
+    // ── VISIT SUMMARY MODULE ─────────────────────────────────────────────────
+    var _vsumId = null;
+
+    function openVisitSummary(id) {
+        var v = visitors.find(function(x) { return x.id === id; });
+        if (!v) return;
+        _vsumId = id;
+        document.getElementById('vsum-ref').textContent = v.id + ' — ' + v.visitor + ' (' + v.type + ')';
+        var s = v.summary || {};
+        document.getElementById('vsum-outcome').value      = s.outcome      || '';
+        document.getElementById('vsum-nextsteps').value    = s.nextSteps    || '';
+        document.getElementById('vsum-handler').value      = s.handler      || v.meetWith || '';
+        document.getElementById('vsum-followupdate').value = s.followUpDate || '';
+        document.getElementById('vsum-followuptime').value = s.followUpTime || '';
+        var res = s.resolution || 'Done';
+        document.getElementById('vsum-r-done').checked     = res === 'Done';
+        document.getElementById('vsum-r-followup').checked = res === 'Follow-up';
+        document.getElementById('visitSummaryModal').classList.remove('hidden');
+    }
+
+    function closeVisitSummary() {
+        document.getElementById('visitSummaryModal').classList.add('hidden');
+        _vsumId = null;
+    }
+
+    function saveVisitSummary() {
+        var outcome = document.getElementById('vsum-outcome').value.trim();
+        if (!outcome) { alert('Please enter the visit outcome / summary.'); return; }
+        var resolution = document.getElementById('vsum-r-followup').checked ? 'Follow-up' : 'Done';
+        var v = visitors.find(function(x) { return x.id === _vsumId; });
+        if (!v) return;
+        v.summary = {
+            outcome:      outcome,
+            nextSteps:    document.getElementById('vsum-nextsteps').value.trim(),
+            handler:      document.getElementById('vsum-handler').value.trim(),
+            followUpDate: document.getElementById('vsum-followupdate').value,
+            followUpTime: document.getElementById('vsum-followuptime').value,
+            resolution:   resolution,
+            savedAt:      new Date().toISOString()
+        };
+        v.status = resolution;
+        localStorage.setItem('rfro_visitors', JSON.stringify(visitors));
+        closeVisitSummary();
+        renderVisitors();
+    }
+
+    function visitorSubDashboard() {
+        var total    = visitors.length;
+        var done     = visitors.filter(function(v){ return v.status === 'Done'; }).length;
+        var followup = visitors.filter(function(v){ return v.status === 'Follow-up'; }).length;
+        var today    = new Date(); today.setHours(0,0,0,0);
+        var overdue  = visitors.filter(function(v){
+            if (v.status !== 'Follow-up') return false;
+            if (!v.summary || !v.summary.followUpDate) return false;
+            return new Date(v.summary.followUpDate) < today;
+        });
+        document.getElementById('vd-total').textContent    = total;
+        document.getElementById('vd-done').textContent     = done;
+        document.getElementById('vd-followup').textContent = followup;
+        document.getElementById('vd-overdue').textContent  = overdue.length;
+        var panel = document.getElementById('vd-overdue-panel');
+        var list  = document.getElementById('vd-overdue-list');
+        if (overdue.length) {
+            panel.classList.remove('hidden');
+            list.innerHTML = overdue.map(function(v) {
+                var d = Math.floor((today - new Date(v.summary.followUpDate)) / 86400000);
+                return '<div class="flex justify-between items-center py-1 border-b border-red-100 text-sm">'
+                    + '<span class="font-medium">' + v.visitor + '</span>'
+                    + '<span class="text-xs text-gray-500">' + v.summary.followUpDate + '</span>'
+                    + '<span class="text-xs font-bold text-red-600">' + d + 'd overdue</span>'
+                    + '</div>';
+            }).join('');
+        } else { panel.classList.add('hidden'); }
     }
 
     // ── SETTINGS / ROSTER ─────────────────────────────────────────────
@@ -2917,5 +3090,58 @@ function onEntityInput(val, inputId, dropId) {
     init();
     setInterval(loadTransactions, 30000);
 </script>
+
+<!-- VISIT SUMMARY MODAL -->
+    <div id="visitSummaryModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg max-w-lg w-full p-6 max-h-screen overflow-y-auto">
+            <h2 class="text-lg font-bold mb-1 text-indigo-700">&#128221; Visit Summary</h2>
+            <p id="vsum-ref" class="text-xs text-gray-400 mb-4"></p>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Outcome / Summary of Visit <span class="text-red-500">*</span></label>
+                    <textarea id="vsum-outcome" rows="3" placeholder="Describe what was discussed and the result of the visit..." class="w-full px-3 py-2 border rounded-lg text-sm"></textarea>
+                    <div class="mt-1 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-700">
+                        &#128161; <strong>Reminder:</strong> Include action items discussed and documents submitted or received (if any).
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Next Steps / Follow-up Instructions</label>
+                    <textarea id="vsum-nextsteps" rows="2" placeholder="What needs to happen next? Who is responsible?" class="w-full px-3 py-2 border rounded-lg text-sm"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Personnel Who Handled</label>
+                        <input type="text" id="vsum-handler" placeholder="Staff name" class="w-full px-3 py-2 border rounded-lg text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Next Follow-up Date</label>
+                        <input type="date" id="vsum-followupdate" class="w-full px-3 py-2 border rounded-lg text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Next Follow-up Time <span class="text-xs text-gray-400">(optional)</span></label>
+                    <input type="time" id="vsum-followuptime" class="px-3 py-2 border rounded-lg text-sm" style="max-width:180px">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-2">Mark Visit As</label>
+                    <div class="space-y-2">
+                        <label class="flex items-start gap-2 cursor-pointer p-2 rounded-lg border border-green-200 bg-green-50">
+                            <input type="radio" name="vsum-resolution" value="Done" id="vsum-r-done" checked class="mt-0.5">
+                            <span class="text-sm"><span class="font-semibold text-green-700">&#10003; Done</span> — Visit fully completed, no further action needed</span>
+                        </label>
+                        <label class="flex items-start gap-2 cursor-pointer p-2 rounded-lg border border-orange-200 bg-orange-50">
+                            <input type="radio" name="vsum-resolution" value="Follow-up" id="vsum-r-followup" class="mt-0.5">
+                            <span class="text-sm"><span class="font-semibold text-orange-700">&#8635; Follow-up</span> — Further action or meeting required (stays open until closed)</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="closeVisitSummary()" class="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50 text-sm">Cancel</button>
+                <button onclick="saveVisitSummary()" class="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium text-sm">&#128190; Save Summary</button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
