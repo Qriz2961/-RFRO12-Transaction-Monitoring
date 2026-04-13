@@ -3,78 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Transaction Monitoring - RFRO XIII</title>
-    <script src="https://cdn.tailwindcss.com">
-    // ── TRANSACTION STUB PRINTER ──────────────────────────────────
-    function printTransactionStub(txnId) {
-        var t = transactions.find(function(x){ return x.id === txnId; });
-        if (!t) { alert('Transaction not found.'); return; }
-        var now      = new Date();
-        var dateStr  = now.toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'});
-        var timeStr  = now.toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'});
-        var entry    = TXN_LIST.find(function(x){ return x.name === t.requestType; });
-        var office   = entry ? (entry.office||'RFRO') : 'RFRO';
-        var mc       = entry ? (entry.mc||'') : '';
-        var fee      = entry ? entry.fee : (t.estimatedFee||'');
-        var time     = entry ? entry.time : (t.estimatedTime||'');
-        var offBg    = office==='RFRO' ? '#dbeafe' : '#f3f4f6';
-        var offColor = office==='RFRO' ? '#1e40af' : '#6b7280';
-        var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Stub</title>'
-            + '<style>@page{size:4in 6in;margin:.3in}body{font-family:Arial,sans-serif;font-size:11px;color:#111;margin:0}'
-            + '.hdr{text-align:center;border-bottom:2px solid #1e3a5f;padding-bottom:8px;margin-bottom:10px}'
-            + '.ag{font-size:9px;color:#555;line-height:1.4}.on{font-size:11px;font-weight:700;color:#1e3a5f}'
-            + '.rb{background:#1e3a5f;color:#fff;text-align:center;padding:10px;border-radius:4px;margin:8px 0}'
-            + '.rl{font-size:9px;opacity:.8;text-transform:uppercase;letter-spacing:1px}'
-            + '.rn{font-size:18px;font-weight:700;letter-spacing:2px;font-family:monospace}'
-            + 'table{width:100%;border-collapse:collapse;margin:8px 0}'
-            + 'td{padding:3px 6px;font-size:11px;vertical-align:top}'
-            + 'td:first-child{font-weight:700;color:#555;width:38%;white-space:nowrap}'
-            + '.fb{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:4px;padding:6px 8px;margin:6px 0}'
-            + '.ib{background:#fef9c3;border:1px solid #fcd34d;border-radius:4px;padding:6px 8px;margin:6px 0;font-size:9px;color:#92400e;line-height:1.5}'
-            + '.ft{text-align:center;margin-top:10px;font-size:8px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:6px}'
-            + '@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}'
-            + '</style></head><body>'
-            + '<div class="hdr">'
-            + '<div class="ag">Republic of the Philippines &bull; Department of Transportation</div>'
-            + '<div class="on">LAND TRANSPORTATION FRANCHISING &amp; REGULATORY BOARD</div>'
-            + '<div class="ag">Regional Franchising and Regulatory Office XII &bull; Koronadal City</div>'
-            + '<div style="font-size:15px;font-weight:700;color:#1e3a5f;letter-spacing:1px;margin-top:4px">TRANSACTION STUB</div>'
-            + '</div>'
-            + '<div class="rb">'
-            + '<div class="rl">Reference / Docket Number (MC 2017-002)</div>'
-            + '<div class="rn">' + t.referenceNumber + '</div>'
-            + '<div style="font-size:10px;opacity:.7;margin-top:2px">Office: ' + office + ' &bull; Code: ' + mc + '</div>'
-            + '</div>'
-            + '<table>'
-            + '<tr><td>Applicant/Client:</td><td><strong>' + t.applicantName + '</strong></td></tr>'
-            + '<tr><td>Entity/Company:</td><td><strong>' + (t.entityName||'—') + '</strong></td></tr>'
-            + '<tr><td>Date Received:</td><td>' + (t.dateReceived||dateStr) + '</td></tr>'
-            + '<tr><td>Time:</td><td>' + timeStr + '</td></tr>'
-            + '<tr><td>Contact No.:</td><td>' + (t.contactNumber||'—') + '</td></tr>'
-            + '</table>'
-            + '<div style="border-top:1px dashed #ccc;margin:8px 0"></div>'
-            + '<div style="font-size:9px;color:#555;font-weight:700;text-transform:uppercase;margin-bottom:3px">Type of Transaction</div>'
-            + '<div style="font-size:12px;font-weight:700;color:#1e3a5f;line-height:1.4;margin-bottom:4px">' + t.requestType + '</div>'
-            + '<span style="display:inline-block;padding:2px 8px;border-radius:3px;font-size:9px;font-weight:700;background:' + offBg + ';color:' + offColor + '">' + office + '</span>'
-            + '<div class="fb">'
-            + '<div style="font-size:9px;color:#15803d;font-weight:700;text-transform:uppercase">Processing Fee</div>'
-            + '<div style="font-size:13px;font-weight:700;color:#15803d">' + (fee||'See Cashier') + '</div>'
-            + '<div style="font-size:9px;color:#15803d;margin-top:2px">Processing Time: ' + (time||'See schedule') + '</div>'
-            + '</div>'
-            + '<div class="ib"><strong>Please present this stub at:</strong><br>'
-            + '&bull; Cashier — for payment &bull; Processor — when submitting requirements<br>'
-            + '&bull; Releasing Counter — when claiming documents</div>'
-            + '<div class="ft">Printed: ' + dateStr + ' ' + timeStr + ' &bull; Stage: ' + t.stage + '<br>RFRO XII TMS &bull; LTFRB Region XII</div>'
-            + '</body></html>';
-        var win = window.open('','_blank','width=420,height=650');
-        if (!win) { alert('Allow pop-ups to print the stub.'); return; }
-        win.document.write(html);
-        win.document.close();
-        win.focus();
-        setTimeout(function(){ win.print(); }, 500);
-    }
-
-    </script>
+    <title>Transaction Monitoring - RFRO XII</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 
 <!-- VISIT SUMMARY MODAL -->
     <div id="visitSummaryModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -203,125 +133,6 @@
             </div>
         </div>
     </div>
-</body>
-</html>    // ── TRANSACTION STUB ────────────────────────────────────────────────────
-    function printTransactionStub(txnId) {
-        var t = transactions.find(function(x){ return x.id === txnId; });
-        if (!t) { alert('Transaction not found.'); return; }
-        var now     = new Date();
-        var dateStr = now.toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'});
-        var timeStr = now.toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'});
-        var txnEntry = TXN_LIST.find(function(x){ return x.name === t.requestType; });
-        var office   = txnEntry ? (txnEntry.office || 'RFRO') : 'RFRO';
-        var mc       = txnEntry ? (txnEntry.mc || '') : '';
-        var fee      = txnEntry ? txnEntry.fee : (t.estimatedFee || '');
-        var time     = txnEntry ? txnEntry.time : (t.estimatedTime || '');
-        var offBg    = office === 'RFRO' ? '#dbeafe' : '#f3f4f6';
-        var offColor = office === 'RFRO' ? '#1e40af' : '#6b7280';
-
-        var html = '<!DOCTYPE html>'
-            + '<html><head><meta charset="UTF-8"><title>Transaction Stub</title>'
-            + '<style>'
-            + '@page{size:4in 6in;margin:0.3in}'
-            + 'body{font-family:Arial,sans-serif;font-size:11px;color:#111;margin:0;padding:0}'
-            + '.header{text-align:center;border-bottom:2px solid #1e3a5f;padding-bottom:8px;margin-bottom:10px}'
-            + '.agency{font-size:9px;color:#555;line-height:1.4}'
-            + '.office-name{font-size:11px;font-weight:700;color:#1e3a5f}'
-            + '.stub-title{font-size:15px;font-weight:700;color:#1e3a5f;letter-spacing:1px;margin:6px 0 2px}'
-            + '.ref-box{background:#1e3a5f;color:#fff;text-align:center;padding:10px;border-radius:4px;margin:8px 0}'
-            + '.ref-label{font-size:9px;opacity:.8;text-transform:uppercase;letter-spacing:1px}'
-            + '.ref-no{font-size:18px;font-weight:700;letter-spacing:2px;font-family:monospace}'
-            + '.mc-code{font-size:10px;opacity:.7;margin-top:2px}'
-            + 'table{width:100%;border-collapse:collapse;margin:8px 0}'
-            + 'td{padding:4px 6px;vertical-align:top;font-size:11px}'
-            + 'td:first-child{font-weight:700;color:#555;width:38%;white-space:nowrap}'
-            + '.divider{border-top:1px dashed #ccc;margin:8px 0}'
-            + '.txn-name{font-size:12px;font-weight:700;color:#1e3a5f;line-height:1.4;margin:4px 0}'
-            + '.fee-box{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:4px;padding:6px 8px;margin:6px 0}'
-            + '.fee-label{font-size:9px;color:#15803d;font-weight:700;text-transform:uppercase}'
-            + '.fee-amount{font-size:13px;font-weight:700;color:#15803d}'
-            + '.instructions{background:#fef9c3;border:1px solid #fcd34d;border-radius:4px;padding:6px 8px;margin:6px 0;font-size:9px;color:#92400e;line-height:1.5}'
-            + '.footer{text-align:center;margin-top:10px;font-size:8px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:6px}'
-            + '@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}'
-            + '</style></head><body>'
-            + '<div class="header">'
-            + '<div class="agency">Republic of the Philippines &bull; Department of Transportation</div>'
-            + '<div class="office-name">LAND TRANSPORTATION FRANCHISING &amp; REGULATORY BOARD</div>'
-            + '<div class="agency">Regional Franchising and Regulatory Office XII &bull; Koronadal City</div>'
-            + '<div class="stub-title">TRANSACTION STUB</div>'
-            + '</div>'
-            + '<div class="ref-box">'
-            + '<div class="ref-label">Reference / Docket Number</div>'
-            + '<div class="ref-no">' + t.referenceNumber + '</div>'
-            + '<div class="mc-code">MC 2017-002 &bull; Office: ' + office + ' &bull; Code: ' + mc + '</div>'
-            + '</div>'
-            + '<table>'
-            + '<tr><td>Applicant / Client:</td><td><strong>' + t.applicantName + '</strong></td></tr>'
-            + '<tr><td>Entity / Company:</td><td><strong>' + (t.entityName || '—') + '</strong></td></tr>'
-            + '<tr><td>Date Received:</td><td>' + (t.dateReceived || dateStr) + '</td></tr>'
-            + '<tr><td>Time:</td><td>' + timeStr + '</td></tr>'
-            + '<tr><td>Contact No.:</td><td>' + (t.contactNumber || '—') + '</td></tr>'
-            + '</table>'
-            + '<div class="divider"></div>'
-            + '<div style="font-size:9px;color:#555;font-weight:700;text-transform:uppercase;margin-bottom:3px">Type of Transaction</div>'
-            + '<div class="txn-name">' + t.requestType + '</div>'
-            + '<span style="display:inline-block;padding:2px 8px;border-radius:3px;font-size:9px;font-weight:700;background:' + offBg + ';color:' + offColor + '">' + office + '</span>'
-            + '<div class="fee-box">'
-            + '<div class="fee-label">Processing Fee</div>'
-            + '<div class="fee-amount">' + (fee || 'See Cashier') + '</div>'
-            + '<div style="font-size:9px;color:#15803d;margin-top:2px">Processing Time: ' + (time || 'See schedule') + '</div>'
-            + '</div>'
-            + '<div class="instructions">'
-            + '<strong>IMPORTANT — Please present this stub:</strong><br>'
-            + '&bull; At the <strong>Cashier</strong> for payment of processing fees<br>'
-            + '&bull; At the <strong>Processor / Action Officer</strong> when submitting requirements<br>'
-            + '&bull; At the <strong>Releasing Counter</strong> when claiming documents'
-            + '</div>'
-            + '<div class="footer">'
-            + 'Printed: ' + dateStr + ' ' + timeStr + ' &bull; Stage: ' + t.stage + '<br>'
-            + 'RFRO XII Transaction Monitoring System &bull; LTFRB Region XII'
-            + '</div>'
-            + '
-    <!-- REFERENCE CODE MODAL -->
-    <div id="refModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-xl max-w-md w-full shadow-2xl overflow-hidden">
-            <!-- Header -->
-            <div style="background:#1e3a5f;color:#fff;padding:16px 20px;text-align:center">
-                <div style="font-size:11px;opacity:.8;letter-spacing:1px;text-transform:uppercase">LTFRB RFRO XII &bull; Koronadal City</div>
-                <div style="font-size:16px;font-weight:700;margin-top:2px">Transaction Registered</div>
-            </div>
-            <!-- Reference Number Box -->
-            <div style="background:#f0f7ff;border-bottom:1px solid #bfdbfe;padding:20px;text-align:center">
-                <div style="font-size:10px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Reference / Docket Number (MC 2017-002)</div>
-                <div id="refModalNo" style="font-size:26px;font-weight:700;color:#1e3a5f;font-family:monospace;letter-spacing:3px;background:#fff;border:2px solid #1e3a5f;border-radius:6px;padding:10px 16px;display:inline-block"></div>
-                <div style="font-size:11px;color:#6b7280;margin-top:8px">&#9997; Please write this number on the client's paper request form</div>
-            </div>
-            <!-- Details -->
-            <div style="padding:16px 20px">
-                <table style="width:100%;font-size:12px;border-collapse:collapse">
-                    <tr><td style="padding:4px 0;color:#6b7280;width:40%">Applicant:</td><td style="padding:4px 0;font-weight:600" id="refModalName"></td></tr>
-                    <tr><td style="padding:4px 0;color:#6b7280">Entity:</td><td style="padding:4px 0;font-weight:600" id="refModalEntity"></td></tr>
-                    <tr><td style="padding:4px 0;color:#6b7280">Transaction:</td><td style="padding:4px 0;font-size:11px" id="refModalTxn"></td></tr>
-                    <tr><td style="padding:4px 0;color:#6b7280">Date Received:</td><td style="padding:4px 0" id="refModalDate"></td></tr>
-                    <tr><td style="padding:4px 0;color:#6b7280">Processing Fee:</td><td style="padding:4px 0;font-weight:600;color:#15803d" id="refModalFee"></td></tr>
-                    <tr><td style="padding:4px 0;color:#6b7280">Processing Time:</td><td style="padding:4px 0" id="refModalTime"></td></tr>
-                </table>
-                <div style="background:#fef9c3;border:1px solid #fcd34d;border-radius:6px;padding:8px 12px;margin-top:10px;font-size:11px;color:#92400e;line-height:1.6">
-                    <strong>Instructions for Staff:</strong><br>
-                    1. Write the Reference Number on the client's paper form<br>
-                    2. Inform client of processing fee and time<br>
-                    3. Direct client to Cashier for payment
-                </div>
-            </div>
-            <!-- Buttons -->
-            <input type="hidden" id="refModalId">
-            <div style="padding:12px 20px;border-top:1px solid #e5e7eb;display:flex;gap:8px">
-                <button onclick="closeRefModal()" class="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50 text-sm font-medium">&#10003; Done</button>
-                <button onclick="printTransactionStub(document.getElementById('refModalId').value);closeRefModal();" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">&#128424; Print Stub</button>
-            </div>
-        </div>
-    </div>
-
 <style>
         .ac-dropdown{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #d1d5db;border-radius:0.5rem;z-index:100;max-height:180px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.1)}
         .ac-item{padding:8px 12px;font-size:13px;cursor:pointer;border-bottom:1px solid #f3f4f6}
@@ -3715,8 +3526,6 @@ function onEntityInput(val, inputId, dropId) {
     }
 
 </script>
-
-
     <!-- REFERENCE CODE MODAL -->
     <div id="refModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-xl max-w-md w-full shadow-2xl overflow-hidden">
@@ -3753,13 +3562,6 @@ function onEntityInput(val, inputId, dropId) {
         </div>
     </div>
 
-</body></html>';
 
-        var win = window.open('', '_blank', 'width=420,height=650');
-        if (!win) { alert('Please allow pop-ups to print the stub.'); return; }
-        win.document.write(html);
-        win.document.close();
-        win.focus();
-        setTimeout(function(){ win.print(); }, 500);
-    }
-
+</body>
+</html>
