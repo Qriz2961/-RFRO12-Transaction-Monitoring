@@ -680,6 +680,8 @@
         QR_PRINTED: 'QR Code Printed'
     };
 
+    const VIOLATION_SCHEDULE = [{"code": "V001", "category": "Franchise", "description": "Refusal to render service / convey passenger", "basis": "JAO 2014-001 Rule IV.j.37", "fine1": 1000, "fine2": 2000, "fine3": 5000}, {"code": "V002", "category": "Franchise", "description": "Overcharging / undercharging of fare", "basis": "JAO 2014-001 Rule IV.j.38", "fine1": 1000, "fine2": 2000, "fine3": 5000}, {"code": "V003", "category": "Franchise", "description": "No CPC / franchise presented during apprehension", "basis": "JAO 2014-001 Rule IV.j.39", "fine1": 1000, "fine2": 2000, "fine3": 5000}, {"code": "V004", "category": "Franchise", "description": "Trip cutting", "basis": "JAO 2014-001 Rule IV.j.49", "fine1": 1000, "fine2": 2000, "fine3": 5000}, {"code": "V005", "category": "Franchise", "description": "Pick-up / drop-off outside designated terminal", "basis": "JAO 2014-001 Rule IV.j.46", "fine1": 1000, "fine2": 2000, "fine3": 5000}, {"code": "V006", "category": "Franchise", "description": "Failure to display fare matrix", "basis": "JAO 2014-001 Rule IV.j.50", "fine1": 1000, "fine2": 2000, "fine3": 5000}, {"code": "V007", "category": "Franchise", "description": "No sign board", "basis": "JAO 2014-001 Rule IV.j.45", "fine1": 1000, "fine2": 2000, "fine3": 5000}, {"code": "V008", "category": "Franchise", "description": "Failure to provide fare discount to entitled passengers", "basis": "JAO 2014-001 Rule IV.j.42", "fine1": 1000, "fine2": 2000, "fine3": 5000}, {"code": "V009", "category": "Franchise", "description": "Breach of franchise conditions under CPC Terms", "basis": "JAO 2014-001 Rule IV.j.51", "fine1": 1000, "fine2": 2000, "fine3": 5000}, {"code": "V010", "category": "Franchise", "description": "Fraud / fake CPC, OR/CR, plates, stickers, tags", "basis": "JAO 2014-001 Rule IV.j.40", "fine1": 3000, "fine2": 5000, "fine3": 10000}, {"code": "V011", "category": "Vehicle", "description": "Operating with defective parts and accessories", "basis": "JAO 2014-001 Rule II.d", "fine1": 5000, "fine2": 5000, "fine3": 5000}, {"code": "V012", "category": "Vehicle", "description": "Driving unregistered / expired registration", "basis": "JAO 2014-001 Rule II.a", "fine1": 10000, "fine2": 10000, "fine3": 10000}, {"code": "V013", "category": "Vehicle", "description": "Unauthorized motor vehicle modification", "basis": "JAO 2014-001 Rule II.b", "fine1": 5000, "fine2": 5000, "fine3": 5000}, {"code": "V014", "category": "Vehicle", "description": "Smoke belching (emission violation)", "basis": "JAO 2014-001 Rule II.f / RA 8749", "fine1": 2000, "fine2": 4000, "fine3": 6000}, {"code": "V015", "category": "Vehicle", "description": "Improper / tampered license plates or stickers", "basis": "JAO 2014-001 Rule II.e", "fine1": 5000, "fine2": 5000, "fine3": 5000}, {"code": "V016", "category": "Driver", "description": "Reckless driving", "basis": "JAO 2014-001 Rule I.e", "fine1": 2000, "fine2": 3000, "fine3": 10000}, {"code": "V017", "category": "Driver", "description": "Driving without valid driver's license", "basis": "JAO 2014-001 Rule I.a", "fine1": 3000, "fine2": 3000, "fine3": 3000}, {"code": "V018", "category": "Driver", "description": "Failure to wear seat belt / require passengers to wear", "basis": "JAO 2014-001 Rule I.g1-g2", "fine1": 1000, "fine2": 2000, "fine3": 5000}, {"code": "V019", "category": "Driver", "description": "Carrying illegal / prohibited cargoes", "basis": "JAO 2014-001 Rule IV.j.47", "fine1": 1000, "fine2": 2000, "fine3": 5000}, {"code": "V020", "category": "Driver", "description": "Overloading beyond authorized capacity", "basis": "JAO 2014-001 Rule III", "fine1": 1000, "fine2": 2000, "fine3": 5000}, {"code": "V021", "category": "Safety", "description": "No fire extinguisher or required STOP/GO signage", "basis": "JAO 2014-001 Rule IV.j.48", "fine1": 1000, "fine2": 2000, "fine3": 5000}, {"code": "V022", "category": "Safety", "description": "Obstruction — loading/unloading causing traffic blockage", "basis": "JAO 2014-001 Rule IV.j.35", "fine1": 1000, "fine2": 2000, "fine3": 5000}, {"code": "V023", "category": "Administrative", "description": "Non-payment of supervision fees (per unit per year)", "basis": "LTFRB MC 88-017", "fine1": 500, "fine2": 1000, "fine3": 2000}, {"code": "V024", "category": "Administrative", "description": "Failure to comply with LTFRB order / directive", "basis": "LTFRB Circulars", "fine1": 1000, "fine2": 2000, "fine3": 5000}, {"code": "V025", "category": "Administrative", "description": "Late filing of petition / application beyond reglementary period", "basis": "LTFRB Rules of Procedure", "fine1": 210, "fine2": 420, "fine3": 1260}];
+
     const ROLE_DEFS = {
         Receiving:  { label:'Receiving Staff',              color:'#1565c0', stages:['Request Prepared','Submitted','Checklisting','Pre-acceptance Review','Incomplete - Awaiting Documents','Not Accepted'] },
         Cashier:    { label:'Cashier',                      color:'#1b5e20', stages:['Assessment','Payment Pending','Payment Completed'] },
@@ -917,64 +919,116 @@ const ENTITY_MASTER = [
       {"caseNo":"19-04-0455","denom":"UVE","name":"VENTRANSCO","fullName":"VENUS TRANSPORT SERVICE COOPERATIVE (VENTRANSCO)","ownership":"Coop.-IC","address":"POBLACION, BULUAN, MAGUINDANAO","nau":1,"noul":1,"route":"ISULAN-DAVAO CITY VIA TACURONG CITY-TULUNAN-MAKILALA-DIGOS CITY","contact":"0908-557-3643/0921-592-5402/09168740801/099085573643","expiry":"31/12/2025","tseid":"TSE00065","_idx":224}
     ];
     const TXN_LIST = [
-        {no:1,name:"PETITION FOR ADOPTION OF TRADE NAME (RFRO)",fee:"PHP 300.00",time:"11 Working Days, 1 Hour"},
-        {no:2,name:"REQUEST FOR FRANCHISE VERIFICATION (RFRO)",fee:"PHP 40.00",time:"3 Hours"},
-        {no:3,name:"RELEASING OF DECISIONS/ORDERS (RFRO)",fee:"No Fee",time:"Per document"},
-        {no:4,name:"CONFIRMATION OF UNITS AND ISSUANCE OF CERTIFICATE OF CONFIRMATION STICKER (RFRO)",fee:"PHP 240.00",time:"4 Working Days, 6 Hours"},
-        {no:5,name:"REQUEST FOR INSPECTION OF TERMINAL (RFRO)",fee:"PHP 1,300.00+",time:"12 Working Days, 5 Hours"},
-        {no:6,name:"REQUEST FOR CERTIFIED TRUE COPY (RFRO)",fee:"No Fee",time:"1 Working Day, 7 Hours"},
-        {no:7,name:"NOTICE FOR CORRECTION OF TYPOGRAPHICAL ERRORS IN THE DECISION (RFRO)",fee:"PHP 300.00",time:"1 Working Day"},
-        {no:8,name:"NOTICE OF CHANGE ENGINE (RFRO)",fee:"PHP 50.00 per unit",time:"1 Working Day"},
-        {no:9,name:"REQUEST FOR SPECIAL TRIP FOR SPECIAL OCCASIONS (RFRO)",fee:"PHP 170.00",time:"4 Hours"},
-        {no:10,name:"ENLISTMENT FOR DRIVER'S ACADEMY (RFRO)",fee:"PHP 40.00",time:"4 Working Days, 2 Hours"},
-        {no:11,name:"REQUEST FOR ACCREDITATION OF TAXI METER PROVIDER (CENTRAL OFFICE)",fee:"PHP 5,500.00",time:"19 Working Days, 7 Hours"},
-        {no:12,name:"CHANGE OF PARTY APPLICANT (RFRO)",fee:"PHP 570.00",time:"45 Working Days, 3 Hours"},
-        {no:13,name:"ISSUANCE OF ALTERNATIVE CERTIFICATE (CENTRAL OFFICE)",fee:"No Fee",time:"23 Working Days, 3 Hours"},
-        {no:14,name:"REQUEST FOR FRANCHISE VERIFICATION (RFRO NCR)",fee:"PHP 40.00",time:"2 Hours"},
-        {no:15,name:"REQUEST FOR INSPECTION OF GARAGE (RFRO)",fee:"PHP 1,140.00+",time:"3 Working Days, 2 Hours"},
-        {no:16,name:"MODIFICATION OF ROUTE (CHANGE BASE OF OPERATION) - (RFRO)",fee:"PHP 600.00",time:"46 Working Days, 6 Hours"},
-        {no:17,name:"REQUEST FOR CERTIFICATION OF FRANCHISE RECORDS (RFRO)",fee:"PHP 50.00",time:"5 Hours"},
-        {no:18,name:"PETITION FOR FARE ADJUSTMENT (RFRO)",fee:"PHP 570.00+",time:"66 Working Days, 4 Hours"},
-        {no:19,name:"ISSUANCE OF PROVISIONAL AUTHORITY (RFRO)",fee:"PHP 300.00",time:"7 Working Days, 5 Hours"},
-        {no:20,name:"REQUEST FOR ISSUANCE OF CLEARANCE OF ACCOUNTS (RFRO)",fee:"PHP 90.00",time:"4 Working Days"},
-        {no:21,name:"FILING OF MOTIONS (RFRO)",fee:"PHP 260.00",time:"40 Working Days"},
-        {no:22,name:"PETITION FOR REGISTRATION IN-LIEU OF AUTHORIZED UNIT/S (RFRO)",fee:"PHP 310.00",time:"11 Working Days, 1 Hour"},
-        {no:23,name:"PETITION FOR AUTHORITY TO INSTALL ADVERTISING SIGNS ON AUTHORIZED UNIT/S (RFRO)",fee:"PHP 10,200.00+",time:"11 Working Days, 1 Hour"},
-        {no:24,name:"CONTEST/OPPOSITION TO APPLICATIONS, COMPLAINTS AND OTHER CASES - BOARD EN BANC (CENTRAL OFFICE)",fee:"No Fee",time:"130 Working Days, 4 Hours"},
-        {no:25,name:"PREPARATION FOR PAYMENT FOR GENERAL SERVICES - (RFRO)",fee:"No Fee",time:"10 Working Days, 6 Hours"},
-        {no:26,name:"PREPARATION FOR PAYMENT FOR LOT PURCHASE (RFRO)",fee:"No Fee",time:"14 Working Days"},
-        {no:27,name:"ACCREDITATION OF GLOBAL NAVIGATION SATELLITE SYSTEM (GNSS) PROVIDERS - CENTRAL OFFICE",fee:"PHP 10,000.00",time:"18 Working Days, 4 Hours"},
-        {no:28,name:"PETITION FOR RE-REGISTRATION/REINSTATEMENT OF UNIT/S (RFRO)",fee:"PHP 100.00",time:"11 Working Days, 1 Hour"},
-        {no:29,name:"OPENING OF QUALIFICATION DOCUMENTS - OMNIBUS FRANCHISING GUIDELINES & PUVMP (RFRO)",fee:"PHP 760.00+",time:"16 Working Days, 5 Hours"},
-        {no:30,name:"CHANGE OF NAME (CORPORATION, PARTNERSHIP, COOPERATIVE) - (RFRO)",fee:"PHP 560.00",time:"46 Working Days, 7 Hours"},
-        {no:31,name:"PETITION TO WITHDRAW APPLICATION (RFRO)",fee:"PHP 260.00",time:"11 Working Days, 1 Hour"},
-        {no:32,name:"NOTICE FOR CHANGE OF NAME DUE TO CHANGE OF CIVIL STATUS (RFRO)",fee:"PHP 300.00",time:"1 Working Day"},
-        {no:33,name:"PETITION FOR CANCELLATION OF FRANCHISE / UNIT (RFRO)",fee:"PHP 310.00",time:"11 Working Days, 1 Hour"},
-        {no:34,name:"PREPARATION OF PAYMENT FOR SUPPLIES THROUGH PUBLIC BIDDING (RFRO)",fee:"No Fee",time:"13 Working Days"},
-        {no:35,name:"PETITION FOR INTERCHANGE OF UNIT/S (RFRO)",fee:"PHP 310.00",time:"17 Working Days"},
-        {no:36,name:"CONTEST/OPPOSITION TO APPLICATIONS (RFRO)",fee:"No Fee",time:"139 Working Days, 5 Hours"},
-        {no:37,name:"ACCREDITATION OF TRANSPORTATION NETWORK COMPANY (RFRO)",fee:"PHP 10,000.00",time:"18 Working Days, 4 Hours"},
-        {no:38,name:"REQUEST FOR INSPECTION, TESTING, SEALING/RESEALING OF TAXI UNIT/S (RFRO)",fee:"PHP 125.00",time:"7 Hours"},
-        {no:39,name:"PETITION FOR UPGRADING AND DOWNGRADING OF UNIT/S (NON-AIRCON TO AIRCON AND VICE VERSA) (RFRO)",fee:"PHP 570.00",time:"11 Working Days, 1 Hour"},
-        {no:40,name:"PETITION FOR SPECIAL PERMIT IN THE INTERIM - (RFRO)",fee:"PHP 286.00",time:"11 Working Days, 1 Hour"},
-        {no:41,name:"REQUEST TO SURRENDER OF PLATE/S OF UNIT/S (RFRO)",fee:"No Fee",time:"5 Hours"},
-        {no:42,name:"ISSUANCE OF PAYMENT ORDER SLIP FOR LIQUIDATED DAMAGES DUE TO DELAY OF SERVICES (RFRO)",fee:"No Fee",time:"2 Hours"},
-        {no:43,name:"OPENING OF QUALIFICATION DOCUMENTS OF PROPOSED PREMIUM POINT-TO-POINT BUS SERVICES (RFRO)",fee:"PHP 520.00+",time:"16 Working Days, 5 Hours"},
-        {no:44,name:"PETITION FOR CHANGE OF VENUE OF LTO REGISTRATION (RFRO)",fee:"PHP 300.00",time:"11 Working Days, 1 Hour"},
-        {no:45,name:"ISSUANCE OF PAYMENT ORDER SLIP FOR NOTICE OF DISALLOWANCE (RFRO)",fee:"No Fee",time:"Per document"},
-        {no:46,name:"REQUEST FOR INSPECTION OF UNIT/S (RFRO)",fee:"PHP 250.00+",time:"12 Working Days, 5 Hours"},
-        {no:47,name:"PETITION FOR SPECIAL PERMIT DURING SPECIAL HOLIDAYS / ISSUANCE OF PROVISIONAL AUTHORITY (RFRO)",fee:"PHP 300.00",time:"11 Working Days"},
-        {no:48,name:"PETITION FOR DROPPING OF UNIT/S (RFRO)",fee:"PHP 350.00",time:"15 Working Days"},
-        {no:49,name:"EXTENSION OF VALIDITY OF CERTIFICATE OF PUBLIC CONVENIENCE - RFRO",fee:"PHP 610.00 (first 2 units) + PHP 70.00 per succeeding unit | Note: Standard fee only — additional fees and penalties not included",time:"46 Working Days, 7 Hours"},
-        {no:50,name:"PETITION FOR DROPPING AND SUBSTITUTION OF UNIT/S (RFRO)",fee:"PHP 350.00",time:"11 Working Days, 1 Hour"},
-        {no:51,name:"PREPARATION FOR PAYMENT OF INFRASTRUCTURE PROJECT (RFRO)",fee:"No Fee",time:"14 Working Days"},
-        {no:52,name:"PETITION FOR STORAGE OF UNIT'S PLATE (RFRO)",fee:"PHP 500.00+",time:"18 Working Days"},
-        {no:53,name:"PETITION FOR ADOPTION OF COLOR SCHEME (RFRO)",fee:"PHP 569.00",time:"19 Working Days, 7 Hours"},
-        {no:54,name:"CONSOLIDATION OF CASES (RFRO)",fee:"PHP 1,020.00",time:"46 Working Days, 3 Hours"},
-        {no:55,name:"ISSUANCE OF A NEW CERTIFICATE OF PUBLIC CONVENIENCE (CPC) - RFRO",fee:"PHP 1,500.00+",time:"46 Working Days, 7 Hours"},
-        {no:56,name:"ADJUDICATION OF APPREHENDED VEHICLES WITH FRANCHISE VIOLATION/S (FOR CONTESTED APPREHENSIONS) - RFRO",fee:"No Fee",time:"62 Working Days, 3 Hours"},
-        {no:57,name:"ISSUANCE OF A NEW CPC FOR TRANSPORTATION NETWORK VEHICLE SERVICE (TNVS) (RFRO)",fee:"PHP 570.00+",time:"46 Working Days, 1 Hour"},
-        {no:58,name:"PETITION FOR DROPPING AND SUBSTITUTION OF UNIT/S WITH PENDING APPLICATION FOR CONSOLIDATION (RFRO)",fee:"PHP 310.00+",time:"10 Working Days"}
+        {no:1,name:"REQUEST FOR CERTIFIED TRUE COPY (CENTRAL OFFICE)",fee:"PHP 1.5 / PHP 53 / PHP 50",time:"1 Working Day, 7 Hours",office:"CO",mc:"CTC"},
+        {no:2,name:"NOTICE FOR CHANGE OF NAME DUE TO CHANGE OF CIVIL STATUS (CENTRAL OFFICE)",fee:"PHP 250 / PHP 10 / PHP 40 / PHP 300",time:"1 Working Day",office:"CO",mc:"CN"},
+        {no:3,name:"NOTICE FOR CORRECTION OF TYPOGRAPHICAL ERRORS IN THE DECISION (CENTRAL OFFICE)",fee:"PHP 300",time:"1 Working Day",office:"CO",mc:"CT"},
+        {no:4,name:"ISSUANCE OF PAYMENT ORDER SLIP FOR LIQUIDATED DAMAGES DUE TO DELAY OF SERVICES (CENTRAL OFFICE)",fee:"Formula-based",time:"2 Hours",office:"CO",mc:"POS"},
+        {no:5,name:"NOTICE FOR CORRECTION OF TYPOGRAPHICAL ERRORS IN THE DECISION (CENTRAL OFFICE)",fee:"PHP 250 / PHP 10 / PHP 40 / PHP 300",time:"1 Working Day",office:"CO",mc:"CT"},
+        {no:6,name:"REQUEST FOR SPECIAL TRIP FOR SPECIAL OCCASIONS (CENTRAL OFFICE)",fee:"PHP 150 / PHP 50 / PHP 40 / PHP 240",time:"7 Hours",office:"Both",mc:"SP"},
+        {no:7,name:"NOTICE OF CHANGE ENGINE (CENTRAL OFFICE)",fee:"PHP 50",time:"1 Working Day",office:"CO",mc:"CE"},
+        {no:8,name:"PETITION FOR DROPPING OF UNIT/S (CENTRAL OFFICE)",fee:"No Fee",time:"Per document",office:"CO",mc:"D"},
+        {no:9,name:"ISSUANCE OF PAYMENT ORDER SLIP FOR NOTICE OF DISALLOWANCE (CENTRAL OFFICE)",fee:"PHP 300",time:"1 Working Day",office:"CO",mc:"POS"},
+        {no:10,name:"CONFIRMATION OF UNITS AND ISSUANCE OF CERTIFICATE OF CONFIRMATION STICKER (CENTRAL OFFICE)",fee:"PHP 200 / PHP 40 / PHP 240",time:"18 Working Days",office:"CO",mc:"YVC"},
+        {no:11,name:"PETITION FOR AUTHORITY TO INSTALL ADVERTISING SIGNS ON AUTHORIZED UNIT/S (CENTRAL OFFICE)",fee:"PHP 200 / PHP 40 / PHP 240",time:"4 Working Days",office:"CO",mc:"AS"},
+        {no:12,name:"REQUEST FOR ISSUANCE OF CLEARANCE OF ACCOUNTS (CENTRAL OFFICE)",fee:"PHP 90",time:"18 Working Days",office:"CO",mc:"CA"},
+        {no:13,name:"REQUEST FOR SPECIAL PERMIT DURING SPECIAL HOLIDAYS (CENTRAL OFFICE)",fee:"PHP 300 (Total)",time:"16 Working Days",office:"CO",mc:"SP"},
+        {no:14,name:"PETITION FOR DROPPING AND SUBSTITUTION OF UNIT/S (CENTRAL OFFICE)",fee:"PHP 300 (Total)",time:"18 Working Days",office:"CO",mc:"DS"},
+        {no:15,name:"REQUEST FOR INSPECTION OF TERMINAL (CENTRAL OFFICE)",fee:"PHP 50",time:"4 Working Days",office:"CO",mc:"ITR"},
+        {no:16,name:"PETITION TO WITHDRAW APPLICATION (CENTRAL OFFICE)",fee:"No Fee",time:"18 Working Days",office:"CO",mc:"WA"},
+        {no:17,name:"PETITION FOR ADOPTION OF TRADE NAME (RFRO)",fee:"PHP 300 (Total)",time:"11 Working Days, 1 Hour",office:"RFRO",mc:"TN"},
+        {no:18,name:"PETITION FOR ADOPTION OF TRADE NAME (CENTRAL OFFICE)",fee:"PHP 250 / PHP 10 / PHP 40 / PHP 300",time:"18 Working Days",office:"CO",mc:"TN"},
+        {no:19,name:"PETITION FOR CANCELLATION OF FRANCHISE / UNIT (CENTRAL OFFICE)",fee:"PHP 250 / PHP 10 / PHP 40 / PHP 300",time:"18 Working Days",office:"CO",mc:"CF"},
+        {no:20,name:"PETITION FOR CHANGE OF VENUE OF LTO REGISTRATION (CENTRAL OFFICE)",fee:"PHP 250 / PHP 10 / PHP 40 / PHP 300",time:"18 Working Days",office:"CO",mc:"CV"},
+        {no:21,name:"PETITION FOR INTERCHANGE OF UNIT/S (CENTRAL OFFICE)",fee:"PHP 350 (Total)",time:"20 Working Days",office:"CO",mc:"DS"},
+        {no:22,name:"PETITION FOR ADOPTION OF COLOR SCHEME (CENTRAL OFFICE)",fee:"PHP 510 / PHP 50 / PHP 40 / PHP 610",time:"21 Working Days, 7 Hours",office:"CO",mc:"CS"},
+        {no:23,name:"ISSUANCE OF A NEW CERTIFICATE OF PUBLIC CONVENIENCE (CPC) - CENTRAL OFFICE",fee:"PHP 510 / PHP 10 / PHP 520 / PHP 50",time:"44 Working Days, 3 Hours",office:"CO",mc:"NC"},
+        {no:24,name:"MODIFICATION OF ROUTE (CHANGE BASE OF OPERATION) - CENTRAL OFFICE",fee:"PHP 510 / PHP 10 / PHP 50 / PHP 40 / PHP 610",time:"40 Working Days, 4 Hours",office:"CO",mc:"MR"},
+        {no:25,name:"CONSOLIDATION OF CASES (CENTRAL OFFICE)",fee:"PHP 510 + PHP 10 + PHP 510.00 + PHP 10",time:"48 Working Days, 4 Hours",office:"CO",mc:"CC"},
+        {no:26,name:"PETITION FOR REGISTRATION IN-LIEU OF AUTHORIZED UNIT/S (CENTRAL OFFICE)",fee:"PHP 250 / PHP 50 / PHP 10 / PHP 40 / PHP 350",time:"18 Working Days, 4 Hours",office:"CO",mc:"RL"},
+        {no:27,name:"ISSUANCE OF A NEW CERTIFICATE OF PUBLIC CONVENIENCE (CPC) FOR TNVS - CENTRAL OFFICE",fee:"PHP 510 / PHP 10 / PHP 40 / PHP 570",time:"50 Working Days",office:"CO",mc:"NC"},
+        {no:28,name:"REQUEST FOR FRANCHISE VERIFICATION (RFRO)",fee:"PHP 40",time:"3 Hours",office:"RFRO",mc:"VER"},
+        {no:29,name:"RELEASING OF DECISIONS/ORDERS (RFRO)",fee:"No Fee",time:"Per document",office:"RFRO",mc:"REL"},
+        {no:30,name:"CONFIRMATION OF UNITS AND ISSUANCE OF CERTIFICATE OF CONFIRMATION STICKER (RFRO)",fee:"PHP 200 / PHP 40 / PHP 240",time:"4 Working Days, 6 Hours",office:"RFRO",mc:"YVC"},
+        {no:31,name:"REQUEST FOR INSPECTION OF TERMINAL (RFRO)",fee:"PHP 1800 (Total)",time:"12 Working Days, 5 Hours",office:"RFRO",mc:"ITR"},
+        {no:32,name:"REQUEST FOR CERTIFIED TRUE COPY (RFRO)",fee:"No Fee",time:"1 Working Day, 7 Hours",office:"RFRO",mc:"CTC"},
+        {no:33,name:"REQUEST FOR CERTIFIED TRUE COPY (RFRO)",fee:"No Fee",time:"1 Working Day, 7 Hours",office:"RFRO",mc:"CTC"},
+        {no:34,name:"NOTICE FOR CORRECTION OF TYPOGRAPHICAL ERRORS IN THE DECISION (RFRO)",fee:"PHP 300 (Total)",time:"1 Working Day, 7 Hours",office:"RFRO",mc:"CT"},
+        {no:35,name:"NOTICE OF CHANGE ENGINE (RFRO)",fee:"PHP 50",time:"1 Working Day",office:"RFRO",mc:"CE"},
+        {no:36,name:"REQUEST FOR SPECIAL TRIP FOR SPECIAL OCCASIONS (RFRO)",fee:"PHP 170 (Total)",time:"1 Working Day, 1 Hour",office:"RFRO",mc:"SP"},
+        {no:37,name:"ISSUANCE OF PROVISIONAL AUTHORITY (RFRO)",fee:"PHP 520 (Total)",time:"7 Working Days, 5 Hours",office:"RFRO",mc:"PA"},
+        {no:38,name:"ENLISTMENT FOR DRIVER'S ACADEMY (CENTRAL OFFICE)",fee:"PHP 40",time:"4 Hours",office:"CO",mc:"DA"},
+        {no:39,name:"ENLISTMENT FOR DRIVER'S ACADEMY (RFRO)",fee:"PHP 40",time:"4 Hours",office:"RFRO",mc:"DA"},
+        {no:40,name:"REQUEST FOR ACCREDITATION OF TAXI METER PROVIDER (CENTRAL OFFICE)",fee:"PHP 1500 / PHP 4000",time:"19 Working Days, 2 Hours",office:"CO",mc:"ATM"},
+        {no:41,name:"REQUEST FOR CERTIFICATION OF FRANCHISE RECORDS (CENTRAL OFFICE)",fee:"PHP 60",time:"5 Hours",office:"CO",mc:"CFR"},
+        {no:42,name:"CHANGE OF PARTY APPLICANT (RFRO)",fee:"PHP 680 (Total)",time:"45 Working Days, 3 Hours",office:"RFRO",mc:"CP"},
+        {no:43,name:"ISSUANCE OF ALTERNATIVE CERTIFICATE (CENTRAL OFFICE)",fee:"No Fee",time:"23 Working Days, 3 Hours",office:"CO",mc:"AC"},
+        {no:44,name:"ISSUANCE OF ALTERNATIVE CERTIFICATE (CENTRAL OFFICE)",fee:"No Fee",time:"23 Working Days, 3 Hours",office:"CO",mc:"AC"},
+        {no:45,name:"REQUEST FOR FRANCHISE VERIFICATION (RFRO NCR)",fee:"PHP 40",time:"2 Hours",office:"RFRO",mc:"VER"},
+        {no:46,name:"REQUEST FOR INSPECTION OF GARAGE (RFRO)",fee:"PHP 140 (Total)",time:"3 Working Days, 2 Hours",office:"RFRO",mc:"IGR"},
+        {no:47,name:"ACCREDITATION OF TRANSPORTATION NETWORK COMPANY (CENTRAL OFFICE)",fee:"PHP 10000",time:"18 Working Days, 4 Hours",office:"CO",mc:"TNC"},
+        {no:48,name:"PETITION FOR REGISTRATION IN-LIEU OF AUTHORIZED UNIT/S (RFRO)",fee:"PHP 250 / PHP 50 / PHP 10 / PHP 40",time:"18 Working Days",office:"RFRO",mc:"RL"},
+        {no:49,name:"MODIFICATION OF ROUTE (CHANGE BASE OF OPERATION) - (RFRO)",fee:"PHP 510 / PHP 10 / PHP 40 / PHP 560",time:"46 Working Days, 6 Hours",office:"RFRO",mc:"MR"},
+        {no:50,name:"PETITION FOR DROPPING AND SUBSTITUTION OF UNIT/S WITH PENDING APPLICATION FOR CONSOLIDATION (CENTRAL OFFICE)",fee:"PHP 250 / PHP 50 / PHP 10 / PHP 40 / PHP 560",time:"14 Working Days",office:"CO",mc:"DS"},
+        {no:51,name:"PETITION FOR RE-REGISTRATION/REINSTATEMENT OF UNIT/S (CENTRAL OFFICE)",fee:"PHP 1030 (Total)",time:"18 Working Days, 4 Hours",office:"CO",mc:"RU"},
+        {no:52,name:"PETITION FOR RE-REGISTRATION/REINSTATEMENT OF UNIT/S (RFRO)",fee:"PHP 100 / PHP 100 / PHP 1000",time:"3 Working Days, 2 Hours",office:"RFRO",mc:"RU"},
+        {no:53,name:"PETITION FOR FARE ADJUSTMENT (RFRO)",fee:"PHP 100 (Total)",time:"96 Working Days, 4 Hours, +22 Calendar Days",office:"RFRO",mc:"FA"},
+        {no:54,name:"ISSUANCE OF PROVISIONAL AUTHORITY (RFRO)",fee:"PHP 350 (Total)",time:"11 Working Days, 1 Hour",office:"RFRO",mc:"PA"},
+        {no:55,name:"REQUEST FOR ISSUANCE OF CLEARANCE OF ACCOUNTS (RFRO)",fee:"PHP 90 (Total)",time:"40 Working Days",office:"RFRO",mc:"CA"},
+        {no:56,name:"FILING OF MOTIONS (RFRO)",fee:"No Fee",time:"40 Working Days",office:"RFRO",mc:"MOT"},
+        {no:57,name:"PETITION FOR AUTHORITY TO INSTALL ADVERTISING SIGNS ON AUTHORIZED UNIT/S (RFRO)",fee:"PHP 200 / PHP 250 / PHP 10",time:"11 Working Days, 1 Hour",office:"RFRO",mc:"AS"},
+        {no:58,name:"CONTEST/OPPOSITION TO APPLICATIONS WHICH THE BOARD EN BANC HAS JURISDICTION (CENTRAL)",fee:"PHP 600 / PHP 10000 / PHP 10 / PHP 40",time:"130 Working Days, 4 Hours",office:"CO",mc:"OPP"},
+        {no:59,name:"FILING/CONTEST TO APPLICATIONS, COMPLAINTS AND OTHER CASES (CENTRAL OFFICE)",fee:"No Fee",time:"130 Working Days",office:"CO",mc:"OPP"},
+        {no:60,name:"PREPARATION FOR PAYMENT FOR GENERAL SERVICES (CENTRAL OFFICE)",fee:"No Fee",time:"14 Working Days, 6 Hours",office:"CO",mc:"PAY"},
+        {no:61,name:"PREPARATION FOR PAYMENT FOR LOT PURCHASE (CENTRAL OFFICE)",fee:"No Fee",time:"14 Working Days, 6 Hours",office:"CO",mc:"PAY"},
+        {no:62,name:"PREPARATION FOR PAYMENT FOR GENERAL SERVICES (RFRO)",fee:"No Fee",time:"10 Working Days, 6 Hours",office:"RFRO",mc:"PAY"},
+        {no:63,name:"PREPARATION FOR PAYMENT FOR LOT PURCHASE (RFRO)",fee:"No Fee",time:"14 Working Days",office:"RFRO",mc:"PAY"},
+        {no:64,name:"ACCREDITATION OF GLOBAL NAVIGATION SATELLITE SYSTEM (GNSS) PROVIDERS - CENTRAL OFFICE",fee:"PHP 10000",time:"18 Working Days, 4 Hours",office:"CO",mc:"GNS"},
+        {no:65,name:"PETITION FOR RE-REGISTRATION/REINSTATEMENT OF UNIT/S (RFRO)",fee:"PHP 250 / PHP 10 / PHP 260 / PHP 70",time:"18 Working Days",office:"RFRO",mc:"RU"},
+        {no:66,name:"OPENING OF QUALIFICATION DOCUMENTS - OMNIBUS FRANCHISING GUIDELINES & PUBLIC UTILITY VEHICLE MODERNIZATION (CENTRAL OFFICE)",fee:"PHP 770 (Total)",time:"16 Working Days, 5 Hours",office:"CO",mc:"OQD"},
+        {no:67,name:"OPENING OF QUALIFICATION DOCUMENTS - FRANCHISING GUIDELINES & PUBLIC UTILITY VEHICLE MODERNIZATION PROGRAM / PUMP (RFRO)",fee:"PHP 770 (Total)",time:"16 Working Days, 5 Hours",office:"RFRO",mc:"OQD"},
+        {no:68,name:"OPENING OF QUALIFICATION DOCUMENTS OF PROPOSED PREMIUM POINT-TO-POINT BUS SERVICES (CENTRAL OFFICE)",fee:"PHP 250 / PHP 10 / PHP 260 / PHP 520",time:"18 Working Days, 5 Hours",office:"CO",mc:"OQD"},
+        {no:69,name:"OPENING OF QUALIFICATION DOCUMENTS OF PROPOSED PREMIUM POINT-TO-POINT BUS SERVICES (RFRO)",fee:"PHP 250 / PHP 10 / PHP 260 / PHP 520",time:"18 Working Days, 5 Hours",office:"RFRO",mc:"OQD"},
+        {no:70,name:"CHANGE OF NAME (CORPORATION, PARTNERSHIP, COOPERATIVE) - CENTRAL OFFICE",fee:"PHP 580 (Total)",time:"43 Working Days, 6 Hours",office:"CO",mc:"CN"},
+        {no:71,name:"CHANGE OF NAME (CORPORATION, PARTNERSHIP, COOPERATIVE) - (RFRO)",fee:"PHP 660 (Total)",time:"46 Working Days, 7 Hours",office:"RFRO",mc:"CN"},
+        {no:72,name:"PETITION TO WITHDRAW APPLICATION (RFRO)",fee:"PHP 260 (Total)",time:"11 Working Days, 1 Hour",office:"RFRO",mc:"WA"},
+        {no:73,name:"REQUEST FOR CERTIFICATION OF FRANCHISE RECORDS (RFRO)",fee:"PHP 300 (Total)",time:"1 Working Day",office:"RFRO",mc:"CFR"},
+        {no:74,name:"PETITION FOR CANCELLATION OF FRANCHISE / UNIT (RFRO)",fee:"PHP 250 / PHP 50 / PHP 10 / PHP 40",time:"11 Working Days, 1 Hour",office:"RFRO",mc:"CF"},
+        {no:75,name:"PREPARATION OF PAYMENT FOR SUPPLIES THROUGH PUBLIC BIDDING (CENTRAL OFFICE)",fee:"No Fee",time:"13 Working Days, 7 Hours",office:"CO",mc:"PAY"},
+        {no:76,name:"PREPARATION OF PAYMENT FOR SUPPLIES THROUGH PUBLIC BIDDING (RFRO)",fee:"No Fee",time:"13 Working Days, 7 Hours",office:"RFRO",mc:"PAY"},
+        {no:77,name:"PETITION FOR INTERCHANGE OF UNIT/S (RFRO)",fee:"PHP 350 (Total)",time:"17 Working Days",office:"RFRO",mc:"DS"},
+        {no:78,name:"PREPARATION FOR PAYMENT OF INFRASTRUCTURE PROJECT (CENTRAL OFFICE)",fee:"No Fee",time:"17 Working Days",office:"CO",mc:"PAY"},
+        {no:79,name:"ACCREDITATION OF TRANSPORTATION NETWORK COMPANY (RFRO)",fee:"PHP 125",time:"7 Hours",office:"RFRO",mc:"TNC"},
+        {no:80,name:"REQUEST FOR INSPECTION, TESTING, SEALING/RESEALING OF TAXI UNIT/S (RFRO)",fee:"PHP 10000",time:"18 Working Days, 4 Hours",office:"RFRO",mc:"ITS"},
+        {no:81,name:"PETITION FOR UPGRADING AND DOWNGRADING OF UNIT/S (NON-AIRCON TO AIRCON AND VICE VERSA) (CENTRAL OFFICE)",fee:"PHP 510 / PHP 10 / PHP 610",time:"11 Working Days, 1 Hour",office:"CO",mc:"UG"},
+        {no:82,name:"PETITION FOR UPGRADING AND DOWNGRADING OF UNIT/S (NON-AIRCON TO AIRCON AND VICE VERSA) (RFRO)",fee:"PHP 510 / PHP 50 / PHP 40 / PHP 610",time:"11 Working Days, 1 Hour",office:"RFRO",mc:"UG"},
+        {no:83,name:"PETITION FOR SPECIAL PERMIT IN THE INTERIM (CENTRAL OFFICE)",fee:"PHP 10 / PHP 300",time:"17 Working Days, 4 Hours",office:"CO",mc:"SP"},
+        {no:84,name:"PETITION FOR SPECIAL PERMIT IN THE INTERIM (RFRO)",fee:"PHP 250 / PHP 10 / PHP 50 / PHP 40 / PHP 350",time:"12 Working Days, 5 Hours",office:"RFRO",mc:"SP"},
+        {no:85,name:"REQUEST TO SURRENDER OF PLATE/S OF UNIT/S (RFRO)",fee:"No Fee",time:"5 Hours",office:"RFRO",mc:"SRD"},
+        {no:86,name:"ISSUANCE OF PAYMENT ORDER SLIP FOR LIQUIDATED DAMAGES DUE TO DELAY OF SERVICES (RFRO)",fee:"Formula-based",time:"2 Hours",office:"RFRO",mc:"POS"},
+        {no:87,name:"FILING OF MOTIONS (CENTRAL OFFICE)",fee:"No Fee",time:"40 Working Days",office:"CO",mc:"MOT"},
+        {no:88,name:"ADJUDICATION OF APPREHENDED VEHICLES WITH FRANCHISE VIOLATIONS (FOR CONTESTED APPREHENSIONS) - CENTRAL OFFICE",fee:"No Fee",time:"63 Working Days, 5 Hours",office:"CO",mc:"JAO"},
+        {no:89,name:"REQUEST FOR INSPECTION OF UNIT/S (CENTRAL OFFICE)",fee:"PHP 100 / PHP 50",time:"12 Working Days, 5 Hours",office:"CO",mc:"IU"},
+        {no:90,name:"OPENING OF QUALIFICATION DOCUMENTS OF PROPOSED PREMIUM POINT-TO-POINT BUS SERVICES (RFRO)",fee:"PHP 280 / PHP 520",time:"16 Working Days, 5 Hours",office:"RFRO",mc:"OQD"},
+        {no:91,name:"PETITION FOR CHANGE OF VENUE OF LTO REGISTRATION (RFRO)",fee:"PHP 250 / PHP 10 / PHP 40 / PHP 300",time:"11 Working Days, 1 Hour",office:"RFRO",mc:"CV"},
+        {no:92,name:"ISSUANCE OF PAYMENT ORDER SLIP FOR NOTICE OF DISALLOWANCE (RFRO)",fee:"PHP 300 / PHP 100 / PHP 1000",time:"11 Working Days, 1 Hour",office:"RFRO",mc:"POS"},
+        {no:93,name:"REQUEST FOR INSPECTION OF UNIT/S (RFRO)",fee:"PHP 100 / PHP 50",time:"12 Working Days, 5 Hours",office:"RFRO",mc:"IU"},
+        {no:94,name:"EXTENSION OF PROVISIONAL AUTHORITY (RFRO)",fee:"PHP 300",time:"43 Working Days",office:"RFRO",mc:"PA"},
+        {no:95,name:"EXTENSION OF VALIDITY OF CERTIFICATE OF PUBLIC CONVENIENCE (CENTRAL OFFICE)",fee:"PHP 250 / PHP 70 / PHP 10 / PHP 50 / PHP 680",time:"15 Working Days",office:"CO",mc:"EV"},
+        {no:96,name:"PETITION FOR DROPPING OF UNIT/S (RFRO)",fee:"PHP 350 (Total)",time:"18 Working Days",office:"RFRO",mc:"D"},
+        {no:97,name:"PETITION FOR SPECIAL PERMIT DURING SPECIAL HOLIDAYS / ISSUANCE OF PROVISIONAL AUTHORITY (RFRO)",fee:"PHP 250 / PHP 250 / PHP 10 / PHP 350",time:"18 Working Days",office:"RFRO",mc:"SP"},
+        {no:98,name:"EXTENSION OF VALIDITY OF CERTIFICATE OF PUBLIC CONVENIENCE - RFRO",fee:"PHP 20000 / PHP 50000 / PHP 510",time:"46 Working Days, 7 Hours",office:"RFRO",mc:"EV"},
+        {no:99,name:"PETITION FOR DROPPING AND SUBSTITUTION OF UNIT/S (RFRO)",fee:"PHP 250 / PHP 250 / PHP 10 / PHP 350",time:"11 Working Days",office:"RFRO",mc:"DS"},
+        {no:100,name:"PREPARATION FOR PAYMENT OF INFRASTRUCTURE PROJECT (RFRO)",fee:"No Fee",time:"14 Working Days",office:"RFRO",mc:"PAY"},
+        {no:101,name:"PETITION FOR STORAGE OF UNIT'S PLATE (RFRO)",fee:"PHP 250 / PHP 10 / PHP 350",time:"18 Working Days",office:"RFRO",mc:"SU"},
+        {no:102,name:"CHANGE OF PARTY APPLICANT (CENTRAL OFFICE)",fee:"PHP 509 + PHP 4 + PHP 10 + PHP 50 + PHP 510.00 + PHP 40",time:"19 Working Days",office:"CO",mc:"CP"},
+        {no:103,name:"PETITION FOR ADOPTION OF COLOR SCHEME (RFRO)",fee:"PHP 510 + PHP 10 + PHP 50 + PHP 40 / PHP 680 (Total)",time:"19 Working Days",office:"RFRO",mc:"CS"},
+        {no:104,name:"PETITION FOR ADOPTION OF COLOR SCHEME (RFRO)",fee:"PHP 680 (Total)",time:"28 Working Days",office:"RFRO",mc:"CS"},
+        {no:105,name:"CONSOLIDATION OF CASES (RFRO)",fee:"PHP 1030 (Total)",time:"46 Working Days, 7 Hours",office:"RFRO",mc:"CC"},
+        {no:106,name:"RELEASING OF DECISIONS/ORDERS (RFRO)",fee:"No Fee",time:"Per document",office:"RFRO",mc:"REL"},
+        {no:107,name:"REQUEST FOR FRANCHISE VERIFICATION (CENTRAL OFFICE)",fee:"PHP 520 (Total)",time:"3 Hours",office:"CO",mc:"VER"},
+        {no:108,name:"ADJUDICATION OF APPREHENDED VEHICLES WITH FRANCHISE VIOLATIONS (FOR CONTESTED APPREHENSIONS) - RFRO",fee:"No Fee",time:"62 Working Days, 3 Hours",office:"RFRO",mc:"JAO"},
+        {no:109,name:"ISSUANCE OF A NEW CERTIFICATE OF PUBLIC CONVENIENCE (CPC) FOR TNVS (RFRO)",fee:"PHP 570 (Total)",time:"46 Working Days, 1 Hour",office:"RFRO",mc:"NC"},
+        {no:110,name:"PETITION FOR DROPPING AND SUBSTITUTION OF UNIT/S WITH PENDING APPLICATION FOR CONSOLIDATION (RFRO)",fee:"PHP 250 / PHP 50 / PHP 40",time:"10 Working Days",office:"RFRO",mc:"DS"},
     ];
 
     const API = 'https://rfro12-api.chris-capistrano.workers.dev';
@@ -1162,11 +1216,31 @@ const ENTITY_MASTER = [
     }
 
     // ── ADD FORM ─────────────────────────────────────────────────────
+    // MC 2017-002 DOCKET NUMBER SYSTEM
+    var _docketSeq = (function(){
+        try{return JSON.parse(localStorage.getItem('rfro_docket_seq')||'{}');}catch(e){return{};}
+    })();
+            var MC_TXN_CODES={1:'CTC',2:'CN',3:'CT',4:'POS',5:'CT',6:'SP',7:'CE',8:'D',9:'POS',10:'YVC',11:'AS',12:'CA',13:'SP',14:'DS',15:'ITR',16:'WA',17:'TN',18:'TN',19:'CF',20:'CV',21:'DS',22:'CS',23:'NC',24:'MR',25:'CC',26:'RL',27:'NC',28:'VER',29:'REL',30:'YVC',31:'ITR',32:'CTC',33:'CTC',34:'CT',35:'CE',36:'SP',37:'PA',38:'DA',39:'DA',40:'ATM',41:'CFR',42:'CP',43:'AC',44:'AC',45:'VER',46:'IGR',47:'TNC',48:'RL',49:'MR',50:'DS',51:'RU',52:'RU',53:'FA',54:'PA',55:'CA',56:'MOT',57:'AS',58:'OPP',59:'OPP',60:'PAY',61:'PAY',62:'PAY',63:'PAY',64:'GNS',65:'RU',66:'OQD',67:'OQD',68:'OQD',69:'OQD',70:'CN',71:'CN',72:'WA',73:'CFR',74:'CF',75:'PAY',76:'PAY',77:'DS',78:'PAY',79:'TNC',80:'ITS',81:'UG',82:'UG',83:'SP',84:'SP',85:'SRD',86:'POS',87:'MOT',88:'JAO',89:'IU',90:'OQD',91:'CV',92:'POS',93:'IU',94:'PA',95:'EV',96:'D',97:'SP',98:'EV',99:'DS',100:'PAY',101:'SU',102:'CP',103:'CS',104:'CS',105:'CC',106:'REL',107:'VER',108:'JAO',109:'NC',110:'DS'};
+    var MC_DENOM_CODES={'PUJ':'PJ','MPUJ':'PJ','EJEEP':'PJ','UVE':'UV','FC':'FC','PB':'PB','TX':'TX','SH':'SH','SB':'SB','TH':'TH','TB':'TB','TC':'TC','TT':'TT','P2':'P2','TV':'TV','AB':'AB'};
+    var MC_MONTH=['a','b','c','d','e','f','g','h','i','j','k','l'];
+    function generateDocketNo(txnName, date, denom) {
+        var d=date?new Date(date):new Date();
+        var yr=d.getFullYear(); var mo=MC_MONTH[d.getMonth()];
+        var txnNo=0;
+        for(var i=0;i<TXN_LIST.length;i++){if(TXN_LIST[i].name===txnName){txnNo=i+1;break;}}
+        var txnCode=txnNo>0?(MC_TXN_CODES[txnNo]||'SVC'):'SVC';
+        var denomCode=MC_DENOM_CODES[(denom||'').toUpperCase()]||(denom?denom.toUpperCase().substring(0,2):'PJ');
+        var seqKey='R12-'+txnCode+'-'+denomCode+'-'+yr+'-'+mo;
+        _docketSeq[seqKey]=(_docketSeq[seqKey]||0)+1;
+        localStorage.setItem('rfro_docket_seq',JSON.stringify(_docketSeq));
+        return 'R12-'+txnCode+'-'+denomCode+'-'+yr+'-'+mo+'-'+String(_docketSeq[seqKey]).padStart(4,'0');
+    }
     function generateRef(name, date) {
-        var initials = name.trim().split(' ').map(function(p) { return p.charAt(0).toUpperCase(); }).join('').substring(0, 3);
-        var dateStr = date.replace(/-/g, '');
-        var num = Math.floor(100 + Math.random() * 900);
-        return 'RFR-' + initials + '-' + dateStr + '-' + num;
+        var d=date?new Date(date):new Date();
+        var yr=d.getFullYear(); var mo=MC_MONTH[d.getMonth()];
+        var sk='svc-'+yr+mo; _docketSeq[sk]=(_docketSeq[sk]||0)+1;
+        localStorage.setItem('rfro_docket_seq',JSON.stringify(_docketSeq));
+        return 'R12-SVC-'+yr+'-'+mo+'-'+String(_docketSeq[sk]).padStart(4,'0');
     }
 
     function updateRefPreview() {
@@ -1205,7 +1279,7 @@ const ENTITY_MASTER = [
         var match = TXN_LIST.find(function(x) { return x.name === type; });
         var t = {
             id: Date.now().toString(),
-            referenceNumber: generateRef(name, date),
+            referenceNumber: generateDocketNo(type, date, (ENTITY_MASTER.find(function(e){return e.name===document.getElementById('entityName').value.trim();})||{}).denom||'PJ'),
             applicantName: name,
             requestType: type,
             estimatedFee: match ? match.fee : '',
@@ -1224,6 +1298,9 @@ const ENTITY_MASTER = [
         closeAddForm();
         renderDashboard();
         renderTransactions();
+        if (confirm('Transaction registered!\nRef No: ' + t.referenceNumber + '\n\nPrint Transaction Stub now?')) {
+            printTransactionStub(t.id);
+        }
     }
 
     // ── PAYMENT MODAL ────────────────────────────────────────────────
@@ -1395,6 +1472,9 @@ const ENTITY_MASTER = [
         }
 
         // Stage update button → opens PIN modal
+        var stubHTML = '<div style="margin-bottom:8px">'
+            + '<button onclick="printTransactionStub(\'' + t.id + '\')" class="w-full px-4 py-2 border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 text-sm font-medium">&#128424; Print Transaction Stub</button>'
+            + '</div>';
         var updateHTML = '';
         if (nextStages.length > 0 && !isDone && t.stage !== STAGES.NOT_ACCEPTED) {
             updateHTML = '<button onclick="openStageModal()" class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 mb-3 text-sm font-medium">&#128260; Update Stage</button>';
@@ -1423,7 +1503,8 @@ const ENTITY_MASTER = [
             + '</div>'
             + feeHTML
             + agingHTML
-            + (t.units && t.units.length ? buildUnitTable(t.units) : '')
+            + stubHTML
+            + (t.units && t.units.length ? buildUnitTable(t.units,(ENTITY_MASTER.find(function(e){return e.name===t.entityName;})||{}).denom||'') : '')
             + payHTML
             + updateHTML
             + qrHTML
@@ -2153,7 +2234,16 @@ function onEntityInput(val, inputId, dropId) {
         var result = getEntitySuggestions(val);
         var drop = document.getElementById(dropId);
         if (!result || (!result.master.length && !result.custom.length)) {
-            drop.classList.add('hidden'); return;
+            drop.classList.add('hidden');
+            if (val.length >= 3) {
+                var safeVal = val.replace(/'/g,'&#39;');
+                drop.innerHTML = '<div style="padding:10px 12px;font-size:12px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;cursor:pointer" onclick="triggerNewApplicantModal(\'' + safeVal + '\')">' +
+                    '<strong style="color:#dc2626">&#9888; \u201c' + val + '\u201d not found in RFRO XII database.</strong>' +
+                    '<br><span style="color:#374151">Click here to register as a <strong>New Applicant</strong> and generate a Docket Number (MC 2017-002).</span>' +
+                    '</div>';
+                drop.classList.remove('hidden');
+            }
+            return;
         }
         var html = '';
         result.master.forEach(function(e) {
@@ -2227,6 +2317,9 @@ function onEntityInput(val, inputId, dropId) {
                          orNo:'', orExpiry:'', lastConfirmed: u.conf||'',
                          make: u.make||'', year: u.year||'', active: u.active, uid: u.uid||'' };
             });
+            // Fetch violations for all loaded units
+            var uids = data.map(function(u){return u.uid;}).filter(Boolean);
+            fetchViolationsForUnits(uids);
             renderUnitRows();
             if (emptyMsg) emptyMsg.style.display='none';
         } catch(err) {
@@ -2543,18 +2636,44 @@ function onEntityInput(val, inputId, dropId) {
         }).join('');
     }
 
-    function buildUnitTable(units) {
+    function buildUnitTable(units, denom) {
         if (!units || !units.length) return '';
         var rows = units.map(function(u, i) {
-            var delinqBg = u.yearsDelinquent > 0 ? '#fef2f2' : '#f0fdf4';
-            var delinqColor = u.yearsDelinquent > 0 ? '#dc2626' : '#16a34a';
-            return '<tr style="background:' + (i%2===0?'#fff':'#f8fafc') + '">'                + '<td style="padding:5px 8px;border:1px solid #e5e7eb;font-size:11px;font-weight:600">' + (u.plate||'—') + '</td>'                + '<td style="padding:5px 8px;border:1px solid #e5e7eb;font-size:10px;color:#374151">' + (u.engine||'—') + '</td>'                + '<td style="padding:5px 8px;border:1px solid #e5e7eb;font-size:10px;color:#374151">' + (u.chassis||'—') + '</td>'                + '<td style="padding:5px 8px;border:1px solid #e5e7eb;font-size:10px">' + (u.orNo||'—') + '</td>'                + '<td style="padding:5px 8px;border:1px solid #e5e7eb;font-size:10px">' + (u.orExpiry||'—') + '</td>'                + '<td style="padding:5px 8px;border:1px solid #e5e7eb;font-size:10px">' + (u.lastConfirmed||'—') + '</td>'                + '<td style="padding:5px 8px;border:1px solid #e5e7eb;font-size:11px;font-weight:700;text-align:center;background:' + delinqBg + ';color:' + delinqColor + '">' + (u.yearsDelinquent > 0 ? u.yearsDelinquent + ' yr(s)' : 'Current') + '</td>'                + '<td style="padding:5px 8px;border:1px solid #e5e7eb;font-size:10px;text-align:center;color:#c55a11;font-weight:600">' + (u.penalty||'—') + '</td>'                + '</tr>';
+            var pc = computeUnitPenalty(u.lastConfirmed, denom || u.denom || '');
+            var bg = pc.stage===0?'#f0fdf4':pc.stage===1?'#fef9c3':pc.stage===2?'#fed7aa':pc.stage===3?'#fecaca':pc.stage===4?'#fee2e2':'#1c0303';
+            var fg = pc.stage===5?'#ffffff':pc.color;
+            var rowBg = i%2===0?'#fff':'#f8fafc';
+            return '<tr style="background:'+rowBg+'">'
+                + '<td style="padding:5px 8px;border:1px solid #e5e7eb;font-size:11px;font-weight:600">' + (u.plate||'—') + '</td>'
+                + '<td style="padding:5px 8px;border:1px solid #e5e7eb;font-size:10px;color:#374151">' + (u.engine||'—') + '</td>'
+                + '<td style="padding:5px 8px;border:1px solid #e5e7eb;font-size:10px;color:#374151">' + (u.chassis||'—') + '</td>'
+                + '<td style="padding:5px 8px;border:1px solid #e5e7eb;font-size:10px">' + (u.orNo||'—') + '</td>'
+                + '<td style="padding:5px 8px;border:1px solid #e5e7eb;font-size:10px">' + (u.orExpiry||'—') + '</td>'
+                + '<td style="padding:5px 8px;border:1px solid #e5e7eb;font-size:10px">' + (u.lastConfirmed||'—') + '</td>'
+                + '<td style="padding:5px 8px;border:1px solid #e5e7eb;font-size:10px;text-align:center;background:'+bg+';color:'+fg+';font-weight:700">'
+                    + pc.label + (pc.days>0?'<br><span style="font-size:9px;font-weight:400">'+pc.days+'d</span>':'') + '</td>'
+                + '<td style="padding:5px 8px;border:1px solid #e5e7eb;font-size:10px;text-align:right;color:'+fg+';font-weight:700;background:'+bg+'">' + (pc.penalty!==null?pesoFmt(pc.penalty):'No Record') + '</td>'
+                + '<td style="padding:4px 8px;border:1px solid #e5e7eb;font-size:9px;color:#6b7280;font-style:italic">' + pc.action + '</td>'
+                + '</tr>';
         }).join('');
-        var delinqCount = units.filter(function(u){ return u.yearsDelinquent > 0; }).length;
+        var delinqCount = units.filter(function(u){ return computeUnitPenalty(u.lastConfirmed, denom||'').stage > 0; }).length;
+        var totalPenalty = units.reduce(function(s,u){ return s+(computeUnitPenalty(u.lastConfirmed,denom||'').penalty||0); },0);
+        var stage5Count = units.filter(function(u){ return computeUnitPenalty(u.lastConfirmed,denom||'').stage===5; }).length;
         var summary = delinqCount > 0
-            ? '<div style="margin-top:6px;padding:5px 10px;background:#fef2f2;border:1px solid #fecaca;border-radius:5px;font-size:11px;color:#dc2626;font-weight:600">&#9888; ' + delinqCount + ' of ' + units.length + ' unit(s) are delinquent. Penalty amounts are Pending — to be computed upon assessment.</div>'
-            : '<div style="margin-top:6px;padding:5px 10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:5px;font-size:11px;color:#16a34a">&#10003; All ' + units.length + ' unit(s) are current.</div>';
-        return '<div style="margin-bottom:12px">'            + '<div style="font-size:12px;font-weight:700;color:#1e3a5f;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">'            + '<span>&#128663; Units Involved (' + units.length + ')</span>'            + '</div>'            + '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px">'            + '<thead><tr style="background:#1f3864;color:#fff">'            + '<th style="padding:6px 8px;text-align:left;border:1px solid #2e75b6;white-space:nowrap">Plate No.</th>'            + '<th style="padding:6px 8px;text-align:left;border:1px solid #2e75b6;white-space:nowrap">Engine No.</th>'            + '<th style="padding:6px 8px;text-align:left;border:1px solid #2e75b6;white-space:nowrap">Chassis No.</th>'            + '<th style="padding:6px 8px;text-align:left;border:1px solid #2e75b6;white-space:nowrap">LTO OR No.</th>'            + '<th style="padding:6px 8px;text-align:left;border:1px solid #2e75b6;white-space:nowrap">OR Expiry</th>'            + '<th style="padding:6px 8px;text-align:left;border:1px solid #2e75b6;white-space:nowrap">Last Confirmed</th>'            + '<th style="padding:6px 8px;text-align:center;border:1px solid #2e75b6;white-space:nowrap">Delinquency</th>'            + '<th style="padding:6px 8px;text-align:center;border:1px solid #2e75b6;white-space:nowrap">Penalty</th>'            + '</tr></thead>'            + '<tbody>' + rows + '</tbody></table></div>'            + summary            + '</div>';
+            ? '<div style="margin-top:8px;padding:8px 12px;background:#fef2f2;border:1px solid #fecaca;border-radius:5px;font-size:11px;color:#991b1b">'
+              + '<strong>&#9888; ' + delinqCount + ' of ' + units.length + ' delinquent &nbsp;|  Est. Total Penalty: ' + pesoFmt(totalPenalty) + '</strong>'
+              + (stage5Count > 0 ? ' &nbsp;|  <span style="color:#450a0a;font-weight:700">&#128680; ' + stage5Count + ' Colorum (JAO 2014-001)</span>' : '')
+              + '<br><span style="font-weight:400;color:#6b7280;font-size:10px">Basis: Supervision Fee Arrears (MC 88-017) + Late Payment + Non-compliance + Colorum (JAO 2014-001)</span>'
+              + '</div>'
+            : '<div style="margin-top:8px;padding:8px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:5px;font-size:11px;color:#15803d">&#10003; All ' + units.length + ' units current. No delinquency penalties.</div>';
+        // Add outstanding violations total
+        var totalViolFines = units.reduce(function(s,u) { return s + (u.uid ? getUnitOutstandingFines(u.uid) : 0); }, 0);
+        var violatingUnits = units.filter(function(u) { return u.uid && (_unitViolations[u.uid]||[]).filter(function(v){return v.status==='Pending'||v.status==='Contested';}).length > 0; });
+        var violBanner = violatingUnits.length > 0
+            ? '<div style="margin-top:6px;padding:8px 12px;background:#fef3c7;border:1px solid #fcd34d;border-radius:5px;font-size:11px;color:#92400e">'              + '<strong>&#9888; ' + violatingUnits.length + ' unit(s) have outstanding violation fines: ' + pesoFmt(totalViolFines) + '</strong>'              + '<br><span style="font-size:10px;color:#6b7280">See violation records in the Unit Violation Manager tool. Confirm fines before proceeding.</span>'              + '</div>'            : '';
+        return '<div style="margin-bottom:12px">'            + '<div style="font-size:12px;font-weight:700;color:#1e3a5f;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">'            + '<span>&#128663; Units Involved (' + units.length + ')</span>'            + '</div>'            + '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px">'            + '<thead><tr style="background:#1f3864;color:#fff">'            + '<th style="padding:6px 8px;text-align:left;border:1px solid #2e75b6;white-space:nowrap">Plate No.</th>'            + '<th style="padding:6px 8px;text-align:left;border:1px solid #2e75b6;white-space:nowrap">Engine No.</th>'            + '<th style="padding:6px 8px;text-align:left;border:1px solid #2e75b6;white-space:nowrap">Chassis No.</th>'            + '<th style="padding:6px 8px;text-align:left;border:1px solid #2e75b6;white-space:nowrap">LTO OR No.</th>'            + '<th style="padding:6px 8px;text-align:left;border:1px solid #2e75b6;white-space:nowrap">OR Expiry</th>'            + '<th style="padding:6px 8px;text-align:left;border:1px solid #2e75b6;white-space:nowrap">Last Confirmed</th>'            + '<th style="padding:6px 8px;text-align:center;border:1px solid #2e75b6;white-space:nowrap">Stage</th>'            + '<th style="padding:6px 8px;text-align:center;border:1px solid #2e75b6;white-space:nowrap">Penalty (₱)</th>'            + '</tr></thead>'            + '<tbody>' + rows + '</tbody></table></div>'            + summary
+            + (typeof violBanner !== 'undefined' ? violBanner : '')
+            + '</div>';
     }
 
 
@@ -2842,6 +2961,147 @@ function onEntityInput(val, inputId, dropId) {
         } else { panel.classList.add('hidden'); }
     }
 
+
+    // ── JAO 2014-001 & LTFRB PENALTY AUTO-COMPUTE ────────────────
+
+    function getDenomSupervisionRate(denom) {
+        var d = (denom || '').toUpperCase();
+        if (d === 'UVE' || d === 'FC' || d === 'FX') return 210;
+        return 105;
+    }
+
+    function getDenomColorumFine(denom) {
+        var d = (denom || '').toUpperCase();
+        if (d === 'FC') return 1000000;
+        if (d === 'UVE' || d === 'FX') return 200000;
+        return 50000;
+    }
+
+    function pesoFmt(n) {
+        if (n === null || n === undefined || isNaN(Number(n))) return 'N/A';
+        return '₱' + Number(n).toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2});
+    }
+
+    function computeUnitPenalty(lastConfirmed, denom) {
+        if (!lastConfirmed || String(lastConfirmed) === 'null' || String(lastConfirmed) === '') {
+            return { stage:0, label:'No Record', penalty:null, color:'#f97316', action:'Record confirmation date', days:0 };
+        }
+        var last = new Date(lastConfirmed);
+        var now  = new Date();
+        var days = Math.floor((now - last) / 86400000);
+        if (days <= 0) return { stage:0, label:'Current ✓', penalty:0, color:'#16a34a', action:'', days:0 };
+        var months = Math.ceil(days / 30.44);
+        var years  = Math.ceil(days / 365.25);
+        var sup    = getDenomSupervisionRate(denom) * years;
+        if (days <= 30)  return { stage:1, label:'Stage 1', color:'#d97706', action:'Issue Warning Notice',       penalty:sup,                                              days:days, months:months };
+        if (days <= 90)  return { stage:2, label:'Stage 2', color:'#ea580c', action:'Issue Show Cause Order',      penalty:sup + 500*months,                                days:days, months:months };
+        if (days <= 180) return { stage:3, label:'Stage 3', color:'#dc2626', action:'Recommend Suspension',        penalty:sup + 500*months + 1000*Math.max(0,months-3),    days:days, months:months };
+        if (days <= 364) return { stage:4, label:'Stage 4', color:'#991b1b', action:'File for CPC Cancellation',  penalty:sup + 500*months + 1000*(months-3) + 10000,      days:days, months:months };
+        return             { stage:5, label:'Stage 5—Colorum', color:'#450a0a', action:'File Colorum Case + Impound (JAO 2014-001)', penalty:getDenomColorumFine(denom), days:days, months:months };
+    }
+
+    function getCurrentEntityDenom() {
+        var el = document.getElementById('entityName');
+        if (!el) return '';
+        var match = ENTITY_MASTER.find(function(e) { return e.name === el.value.trim(); });
+        return match ? match.denom : '';
+    }
+
+
+    // ── UNIT VIOLATIONS MODULE ────────────────────────────────────────────────
+    var _unitViolations = {};  // uid -> [violation records]
+
+    async function fetchViolationsForUnits(uids) {
+        _unitViolations = {};
+        if (!uids || !uids.length) return;
+        await Promise.all(uids.map(async function(uid) {
+            try {
+                var r = await fetch(API + '/violations/' + encodeURIComponent(uid));
+                if (r.ok) {
+                    var data = await r.json();
+                    if (data && data.length) _unitViolations[uid] = data;
+                }
+            } catch(e) { /* silent */ }
+        }));
+        renderUnitRows(); // re-render to show violation badges
+    }
+
+    function getUnitOutstandingFines(uid) {
+        var viols = _unitViolations[uid] || [];
+        return viols.filter(function(v){ return v.status==='Pending'||v.status==='Contested'; })
+                    .reduce(function(s,v){ return s+Number(v.fine); }, 0);
+    }
+
+    function getUnitViolationBadge(uid) {
+        var viols = _unitViolations[uid] || [];
+        if (!viols.length) return '';
+        var outstanding = viols.filter(function(v){ return v.status==='Pending'||v.status==='Contested'; });
+        var total = outstanding.reduce(function(s,v){ return s+Number(v.fine); },0);
+        if (!outstanding.length) return '<span style="font-size:9px;background:#d1fae5;color:#065f46;padding:1px 5px;border-radius:999px;font-weight:700;margin-left:4px">'+viols.length+' viol (paid)</span>';
+        return '<span style="font-size:9px;background:#fee2e2;color:#dc2626;padding:1px 5px;border-radius:999px;font-weight:700;margin-left:4px">'+outstanding.length+' viol / '+pesoFmt(total)+'</span>';
+    }
+
+
+    // ── NEW APPLICANT FLOW (MC 2017-002) ────────────────────────
+    var _pendingNewApplicant = null;
+    function triggerNewApplicantModal(typedName) {
+        _pendingNewApplicant = {name:typedName};
+        document.getElementById('na-name').value=typedName||'';
+        ['na-type','na-denom','na-route','na-units','na-contact'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+        document.getElementById('na-docket-preview').classList.add('hidden');
+        document.getElementById('newApplicantModal').classList.remove('hidden');
+    }
+    function cancelNewApplicant() {
+        document.getElementById('newApplicantModal').classList.add('hidden');
+        _pendingNewApplicant=null;
+        var el=document.getElementById('entityName'); if(el){el.value='';el.focus();}
+        var b=document.getElementById('entityBadge'); if(b){b.style.display='none';b.innerHTML='';}
+    }
+    function previewDocket() {
+        var name=document.getElementById('na-name').value.trim();
+        var denom=document.getElementById('na-denom').value;
+        if(!name||!denom){alert('Please fill in TSE Name and Denomination first.');return;}
+        var date=document.getElementById('dateReceived')?document.getElementById('dateReceived').value:new Date().toISOString().split('T')[0];
+        var d=date?new Date(date):new Date();
+        var yr=d.getFullYear(); var mo=MC_MONTH[d.getMonth()];
+        var denomCode=MC_DENOM_CODES[denom.toUpperCase()]||denom.substring(0,2).toUpperCase();
+        var seqKey='R12-NC-'+denomCode+'-'+yr+'-'+mo;
+        var nextSeq=(_docketSeq[seqKey]||0)+1;
+        var docketNo='R12-NC-'+denomCode+'-'+yr+'-'+mo+'-'+String(nextSeq).padStart(4,'0');
+        document.getElementById('na-docket-no').textContent=docketNo;
+        document.getElementById('na-docket-preview').classList.remove('hidden');
+        if(!_pendingNewApplicant)_pendingNewApplicant={};
+        _pendingNewApplicant.docketNo=docketNo;
+        _pendingNewApplicant.seqKey=seqKey;
+        _pendingNewApplicant.nextSeq=nextSeq;
+    }
+    function confirmNewApplicant() {
+        var name=document.getElementById('na-name').value.trim();
+        var type=document.getElementById('na-type').value;
+        var denom=document.getElementById('na-denom').value;
+        var route=document.getElementById('na-route').value.trim();
+        var units=document.getElementById('na-units').value;
+        var contact=document.getElementById('na-contact').value.trim();
+        if(!name||!type||!denom||!route||!units){alert('Please fill in all required fields.');return;}
+        if(!_pendingNewApplicant||!_pendingNewApplicant.docketNo){previewDocket();return;}
+        _docketSeq[_pendingNewApplicant.seqKey]=_pendingNewApplicant.nextSeq;
+        localStorage.setItem('rfro_docket_seq',JSON.stringify(_docketSeq));
+        var docketNo=_pendingNewApplicant.docketNo;
+        document.getElementById('newApplicantModal').classList.add('hidden');
+        var nameEl=document.getElementById('entityName'); if(nameEl)nameEl.value=name;
+        var badge=document.getElementById('entityBadge');
+        if(badge){
+            badge.innerHTML='<span style="background:#fef9c3;color:#92400e;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700">NEW APPLICANT</span>'
+                +' &bull; <strong>'+type+'</strong> &bull; Denom: <strong>'+denom+'</strong>'
+                +' &bull; Route: '+route+' &bull; Units: '+units
+                +'<br><span style="color:#1e40af;font-weight:700;font-size:12px">Docket No.: '+docketNo+'</span>';
+            badge.style.display='block';
+        }
+        var cEl=document.getElementById('contactNumber'); if(cEl&&contact)cEl.value=contact;
+        _pendingNewApplicant={name:name,type:type,denom:denom,route:route,units:units,contact:contact,docketNo:docketNo,isNew:true};
+        alert('New applicant registered!\nDocket No: '+docketNo+'\n\nThis is the official Case Number for this application.\nPlease complete the transaction form.');
+    }
+
     // ── SETTINGS / ROSTER ─────────────────────────────────────────────
     function openSettings() {
         document.getElementById('settingsAdminPIN').value = '';
@@ -2968,12 +3228,15 @@ function onEntityInput(val, inputId, dropId) {
             drop.innerHTML = '<div class="combo-empty">No matching service type found — you may type a custom entry.</div>';
         } else {
             drop.innerHTML = results.map(function(t, i) {
+                var offBg    = t.office==='RFRO'?'#dbeafe':t.office==='Both'?'#dcfce7':'#f3f4f6';
+                var offColor = t.office==='RFRO'?'#1e40af':t.office==='Both'?'#15803d':'#6b7280';
                 return '<div class="combo-item"'
                     + ' data-val="' + t.name.replace(/"/g,'&quot;') + '"'
                     + ' data-comboid="' + id + '"'
                     + ' data-infoid="' + (infoId || '') + '"'
                     + ' onmousedown="comboSelectEl(this)">'
                     + '<span class="combo-no">' + t.no + '.</span>'
+                    + '<span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;margin-right:4px;background:' + offBg + ';color:' + offColor + '">' + (t.office||'CO') + '</span>'
                     + comboHighlight(t.name, lo)
                     + '</div>';
             }).join('');
@@ -3120,5 +3383,166 @@ function onEntityInput(val, inputId, dropId) {
         </div>
     </div>
 
+
+    <!-- NEW APPLICANT MODAL (MC 2017-002) -->
+    <div id="newApplicantModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-lg w-full p-6 shadow-2xl">
+            <div class="flex items-center gap-3 mb-4">
+                <div style="width:40px;height:40px;background:#fef2f2;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px">&#9888;</div>
+                <div>
+                    <h2 class="text-lg font-bold text-gray-800">TSE Not Found in Database</h2>
+                    <p class="text-sm text-gray-500">This entity has no existing franchise record in RFRO XII.</p>
+                </div>
+            </div>
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 text-sm text-amber-800">
+                <strong>&#128221; New Applicant</strong> &#8212; Fill in the details below to generate a Docket Number per MC 2017-002.
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Name of TSE / Transport Entity *</label>
+                    <input type="text" id="na-name" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Full registered name">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Type of Organization *</label>
+                        <select id="na-type" class="w-full px-3 py-2 border rounded-lg text-sm">
+                            <option value="">-- Select --</option>
+                            <option value="Cooperative">Cooperative (CDA)</option>
+                            <option value="Corporation">Corporation (SEC)</option>
+                            <option value="Single Proprietorship">Single Proprietorship</option>
+                            <option value="Partnership">Partnership</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Denomination *</label>
+                        <select id="na-denom" class="w-full px-3 py-2 border rounded-lg text-sm">
+                            <option value="">-- Select --</option>
+                            <option value="PUJ">PJ &#8212; Public Utility Jeepney</option>
+                            <option value="MPUJ">PJ &#8212; Modern PUJ / E-Jeepney</option>
+                            <option value="UVE">UV &#8212; UV Express</option>
+                            <option value="FC">FC &#8212; Filcab / Multicab</option>
+                            <option value="PB">PB &#8212; Public Utility Bus</option>
+                            <option value="TX">TX &#8212; Air-Conditioned Taxi</option>
+                            <option value="SH">SH &#8212; Shuttle Bus</option>
+                            <option value="SB">SB &#8212; School Bus Service</option>
+                            <option value="TH">TH &#8212; Truck-for-Hire</option>
+                            <option value="TB">TB &#8212; Tourist Bus</option>
+                            <option value="TV">TV &#8212; Transport Network Vehicle Service</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Proposed Route *</label>
+                    <input type="text" id="na-route" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="e.g. Koronadal City &#8212; General Santos City">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">No. of Units Applied *</label>
+                        <input type="number" id="na-units" class="w-full px-3 py-2 border rounded-lg text-sm" min="1" placeholder="e.g. 10">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Contact Number</label>
+                        <input type="text" id="na-contact" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="09XXXXXXXXX">
+                    </div>
+                </div>
+                <div id="na-docket-preview" class="hidden bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
+                    <div class="text-xs font-bold text-blue-600 uppercase mb-1">Generated Docket No. (MC 2017-002)</div>
+                    <div id="na-docket-no" class="text-xl font-bold text-blue-800 font-mono"></div>
+                    <div class="text-xs text-blue-500 mt-1">Format: Office &#8211; Transaction &#8211; Denomination &#8211; Year &#8211; Month &#8211; Sequence</div>
+                </div>
+            </div>
+            <div class="flex gap-2 mt-5">
+                <button onclick="cancelNewApplicant()" class="px-4 py-2 border rounded-lg hover:bg-gray-50 text-sm">&#10005; Cancel / Try Again</button>
+                <button onclick="previewDocket()" class="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 text-sm font-medium">Preview Docket No.</button>
+                <button onclick="confirmNewApplicant()" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">&#10003; Register &amp; Proceed</button>
+            </div>
+        </div>
+    </div>
 </body>
-</html>
+</html>    // ── TRANSACTION STUB ────────────────────────────────────────────────────
+    function printTransactionStub(txnId) {
+        var t = transactions.find(function(x){ return x.id === txnId; });
+        if (!t) { alert('Transaction not found.'); return; }
+        var now     = new Date();
+        var dateStr = now.toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'});
+        var timeStr = now.toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'});
+        var txnEntry = TXN_LIST.find(function(x){ return x.name === t.requestType; });
+        var office   = txnEntry ? (txnEntry.office || 'RFRO') : 'RFRO';
+        var mc       = txnEntry ? (txnEntry.mc || '') : '';
+        var fee      = txnEntry ? txnEntry.fee : (t.estimatedFee || '');
+        var time     = txnEntry ? txnEntry.time : (t.estimatedTime || '');
+        var offBg    = office === 'RFRO' ? '#dbeafe' : '#f3f4f6';
+        var offColor = office === 'RFRO' ? '#1e40af' : '#6b7280';
+
+        var html = '<!DOCTYPE html>'
+            + '<html><head><meta charset="UTF-8"><title>Transaction Stub</title>'
+            + '<style>'
+            + '@page{size:4in 6in;margin:0.3in}'
+            + 'body{font-family:Arial,sans-serif;font-size:11px;color:#111;margin:0;padding:0}'
+            + '.header{text-align:center;border-bottom:2px solid #1e3a5f;padding-bottom:8px;margin-bottom:10px}'
+            + '.agency{font-size:9px;color:#555;line-height:1.4}'
+            + '.office-name{font-size:11px;font-weight:700;color:#1e3a5f}'
+            + '.stub-title{font-size:15px;font-weight:700;color:#1e3a5f;letter-spacing:1px;margin:6px 0 2px}'
+            + '.ref-box{background:#1e3a5f;color:#fff;text-align:center;padding:10px;border-radius:4px;margin:8px 0}'
+            + '.ref-label{font-size:9px;opacity:.8;text-transform:uppercase;letter-spacing:1px}'
+            + '.ref-no{font-size:18px;font-weight:700;letter-spacing:2px;font-family:monospace}'
+            + '.mc-code{font-size:10px;opacity:.7;margin-top:2px}'
+            + 'table{width:100%;border-collapse:collapse;margin:8px 0}'
+            + 'td{padding:4px 6px;vertical-align:top;font-size:11px}'
+            + 'td:first-child{font-weight:700;color:#555;width:38%;white-space:nowrap}'
+            + '.divider{border-top:1px dashed #ccc;margin:8px 0}'
+            + '.txn-name{font-size:12px;font-weight:700;color:#1e3a5f;line-height:1.4;margin:4px 0}'
+            + '.fee-box{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:4px;padding:6px 8px;margin:6px 0}'
+            + '.fee-label{font-size:9px;color:#15803d;font-weight:700;text-transform:uppercase}'
+            + '.fee-amount{font-size:13px;font-weight:700;color:#15803d}'
+            + '.instructions{background:#fef9c3;border:1px solid #fcd34d;border-radius:4px;padding:6px 8px;margin:6px 0;font-size:9px;color:#92400e;line-height:1.5}'
+            + '.footer{text-align:center;margin-top:10px;font-size:8px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:6px}'
+            + '@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}'
+            + '</style></head><body>'
+            + '<div class="header">'
+            + '<div class="agency">Republic of the Philippines &bull; Department of Transportation</div>'
+            + '<div class="office-name">LAND TRANSPORTATION FRANCHISING &amp; REGULATORY BOARD</div>'
+            + '<div class="agency">Regional Franchising and Regulatory Office XII &bull; Koronadal City</div>'
+            + '<div class="stub-title">TRANSACTION STUB</div>'
+            + '</div>'
+            + '<div class="ref-box">'
+            + '<div class="ref-label">Reference / Docket Number</div>'
+            + '<div class="ref-no">' + t.referenceNumber + '</div>'
+            + '<div class="mc-code">MC 2017-002 &bull; Office: ' + office + ' &bull; Code: ' + mc + '</div>'
+            + '</div>'
+            + '<table>'
+            + '<tr><td>Applicant / Client:</td><td><strong>' + t.applicantName + '</strong></td></tr>'
+            + '<tr><td>Entity / Company:</td><td><strong>' + (t.entityName || '—') + '</strong></td></tr>'
+            + '<tr><td>Date Received:</td><td>' + (t.dateReceived || dateStr) + '</td></tr>'
+            + '<tr><td>Time:</td><td>' + timeStr + '</td></tr>'
+            + '<tr><td>Contact No.:</td><td>' + (t.contactNumber || '—') + '</td></tr>'
+            + '</table>'
+            + '<div class="divider"></div>'
+            + '<div style="font-size:9px;color:#555;font-weight:700;text-transform:uppercase;margin-bottom:3px">Type of Transaction</div>'
+            + '<div class="txn-name">' + t.requestType + '</div>'
+            + '<span style="display:inline-block;padding:2px 8px;border-radius:3px;font-size:9px;font-weight:700;background:' + offBg + ';color:' + offColor + '">' + office + '</span>'
+            + '<div class="fee-box">'
+            + '<div class="fee-label">Processing Fee</div>'
+            + '<div class="fee-amount">' + (fee || 'See Cashier') + '</div>'
+            + '<div style="font-size:9px;color:#15803d;margin-top:2px">Processing Time: ' + (time || 'See schedule') + '</div>'
+            + '</div>'
+            + '<div class="instructions">'
+            + '<strong>IMPORTANT — Please present this stub:</strong><br>'
+            + '&bull; At the <strong>Cashier</strong> for payment of processing fees<br>'
+            + '&bull; At the <strong>Processor / Action Officer</strong> when submitting requirements<br>'
+            + '&bull; At the <strong>Releasing Counter</strong> when claiming documents'
+            + '</div>'
+            + '<div class="footer">'
+            + 'Printed: ' + dateStr + ' ' + timeStr + ' &bull; Stage: ' + t.stage + '<br>'
+            + 'RFRO XII Transaction Monitoring System &bull; LTFRB Region XII'
+            + '</div>'
+            + '</body></html>';
+
+        var win = window.open('', '_blank', 'width=420,height=650');
+        if (!win) { alert('Please allow pop-ups to print the stub.'); return; }
+        win.document.write(html);
+        win.document.close();
+        win.focus();
+        setTimeout(function(){ win.print(); }, 500);
+    }
+
