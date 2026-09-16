@@ -427,7 +427,7 @@
 
     <!-- QR SLIP MODAL -->
     <div id="qrModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-lg max-w-sm w-full p-6">
+        <div class="bg-white rounded-lg max-w-sm w-full p-6 max-h-screen overflow-y-auto">
             <h2 class="text-xl font-bold mb-1 text-indigo-700">&#9632; Transaction QR Slip</h2>
             <p id="qrModalRef" class="text-sm text-gray-500 mb-4"></p>
             <div class="text-center mb-4">
@@ -436,6 +436,13 @@
                 </div>
             </div>
             <div id="qrDetails" class="text-sm space-y-1 mb-4"></div>
+            <div class="border-2 border-red-700 bg-red-50 text-red-900 rounded-lg p-3 mb-4 text-xs leading-relaxed">
+                <div class="font-bold text-sm mb-1">&#9888; Tell the client before releasing</div>
+                Bring the <strong>transaction stub</strong> to the LTO along with this document. Once the
+                <strong>LTO has confirmed</strong> the unit or document, <strong>return the stub</strong> to the
+                RFRO XII Releasing Counter so the transaction can be closed.
+                <div class="italic text-red-800 mt-1">Ibalik ang stub sa Releasing Counter pagkatapos ng kumpirmasyon ng LTO.</div>
+            </div>
             <div class="flex gap-2 flex-wrap">
                 <button onclick="document.getElementById('qrModal').classList.add('hidden')" class="px-4 py-2 border rounded-lg hover:bg-gray-50 text-sm">Close</button>
                 <button onclick="printQRSlip()" class="flex-1 px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium text-sm">&#128424; Print Slip + Corner QR</button>
@@ -2538,7 +2545,7 @@ function onEntityInput(val, inputId, dropId) {
         });
         var dateCompleted = completed ? completed.timestamp.split('T')[0] : 'Pending';
         var lines = [
-            'LTFRB RFRO XIII - TRANSACTION RECORD',
+            'LTFRB RFRO XII - TRANSACTION RECORD',
             'Ref No : ' + t.referenceNumber,
             'Applicant : ' + t.applicantName,
             'Entity : ' + (t.entityName || 'N/A'),
@@ -2553,6 +2560,27 @@ function onEntityInput(val, inputId, dropId) {
         // Use encodeURIComponent on the full joined string so the QR API
         // receives it as a proper URL parameter — the API decodes it before
         // encoding into the QR, so the scanner reads plain readable text.
+        return encodeURIComponent(lines.join(' | '));
+    }
+
+    // QR payload for the INTAKE stub. Payment and release data do not exist yet
+    // at this point, so this carries the intake facts plus the return reminder.
+    function getStubQRData(t, office, mc, fee, ptime) {
+        var lines = [
+            'LTFRB RFRO XII - TRANSACTION STUB',
+            'Ref No : ' + t.referenceNumber,
+            'Applicant : ' + t.applicantName,
+            'Entity : ' + (t.entityName || 'N/A'),
+            'Service : ' + t.requestType.substring(0, 55),
+            'Office : ' + office + (mc ? ' (' + mc + ')' : ''),
+            'Received : ' + (t.dateReceived || 'N/A'),
+            'Fee : ' + (fee || 'See Cashier'),
+            'Processing : ' + (ptime || 'See schedule'),
+            'Status : ' + t.stage,
+            'NOTICE : Return this stub to the RFRO XII Releasing Counter after confirmation from the LTO.'
+        ];
+        // Same handling as getQRData(): encode once so the QR API decodes it
+        // back to plain readable text before drawing the code.
         return encodeURIComponent(lines.join(' | '));
     }
 
@@ -2603,13 +2631,16 @@ function onEntityInput(val, inputId, dropId) {
             + 'td{padding:4px 6px;border-bottom:.5px solid #f0f0f0}'
             + 'td:first-child{font-weight:700;color:#1e40af;width:38%}'
             + '.placement{background:#fef9c3;border:1px dashed #ca8a04;border-radius:4px;padding:6px 10px;font-size:10px;color:#92400e;margin-top:10px;text-align:center}'
+            + '.retn{border:2px solid #b91c1c;background:#fef2f2;border-radius:4px;padding:8px 10px;margin-top:8px;font-size:10px;color:#7f1d1d;line-height:1.55}'
+            + '.retn .rh{font-weight:700;font-size:11px;letter-spacing:.5px;margin-bottom:3px}'
+            + '.retn .fil{font-style:italic;color:#991b1b;margin-top:4px}'
             + '.ftr{text-align:center;margin-top:10px;font-size:10px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:8px}'
             + '@media print{body{padding:0}.slip{border-radius:0}}</style></head><body>'
             + '<div class="slip">'
             + '<div class="corner-stamp"><img src="' + qrCorner + '" alt="QR"/><div class="cs-label">SCAN TO VERIFY</div></div>'
             + '<div class="hdr">'
             + '<h2>Land Transportation Franchising and Regulatory Board</h2>'
-            + '<p>Regional Franchising and Regulatory Office XIII</p>'
+            + '<p>Regional Franchising and Regulatory Office XII</p>'
             + '<p>Transaction Completion Slip</p></div>'
             + '<div class="ref">' + t.referenceNumber + '</div>'
             + '<div class="qr"><img src="' + qrUrl + '" width="180" height="180"/></div>'
@@ -2624,7 +2655,12 @@ function onEntityInput(val, inputId, dropId) {
             + '<tr><td>Status</td><td style="color:#15803d;font-weight:700">' + t.stage + '</td></tr>'
             + '</table>'
             + '<div class="placement">&#128204;&nbsp; Attach this slip at the BACK of the FIRST PAGE of the released document. The corner QR (top-right) can be used as a quick-scan reference.</div>'
-            + '<div class="ftr">Scan QR to verify &middot; LTFRB RFRO XIII &middot; ' + today + '</div>'
+            + '<div class="retn"><div class="rh">&#9888; REMINDER TO THE CLIENT / APPLICANT</div>'
+            + 'Bring your <strong>TRANSACTION STUB</strong> to the LTO together with this released document. '
+            + 'After the <strong>LTO has confirmed</strong> your unit or document, <strong>return the stub</strong> to the '
+            + 'RFRO XII Releasing Counter so this transaction can be closed in the records.'
+            + '<div class="fil">Dalhin ang stub sa LTO kasama ang dokumentong ito. Pagkatapos ng kumpirmasyon ng LTO, ibalik ang stub sa Releasing Counter ng RFRO XII.</div></div>'
+            + '<div class="ftr">Scan QR to verify &middot; LTFRB RFRO XII &middot; ' + today + '</div>'
             + '</div>\u003cscript>window.onload=function(){window.print()}\u003c/script>'
             + '</body></html>';
         var w = window.open('', '_blank', 'width=480,height=720');
@@ -3486,43 +3522,72 @@ function onEntityInput(val, inputId, dropId) {
         var ptime    = entry?entry.time:(t.estimatedTime||'');
         var offBg    = office==='RFRO'?'#dbeafe':'#f3f4f6';
         var offColor = office==='RFRO'?'#1e40af':'#6b7280';
+        var stubQR   = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=1&data='
+                     + getStubQRData(t, office, mc, fee, ptime);
+        // Service names in TXN_LIST run from 8 to 123 characters; step the type
+        // down for the long ones so they do not wrap into four lines.
+        var rtLen    = (t.requestType || '').length;
+        var rtSize   = rtLen > 90 ? '8.5px' : (rtLen > 55 ? '9.5px' : '10.5px');
         var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Stub</title>'
             + '<style>@page{size:4in 6in;margin:.3in}body{font-family:Arial,sans-serif;font-size:11px;color:#111;margin:0}'
-            + '.hdr{text-align:center;border-bottom:2px solid #1e3a5f;padding-bottom:8px;margin-bottom:10px}'
-            + '.ag{font-size:9px;color:#555;line-height:1.4}.on{font-size:11px;font-weight:700;color:#1e3a5f}'
-            + '.rb{background:#1e3a5f;color:#fff;text-align:center;padding:10px;border-radius:4px;margin:8px 0}'
-            + 'table{width:100%;border-collapse:collapse;margin:6px 0}'
-            + 'td{padding:3px 6px;font-size:11px}td:first-child{font-weight:700;color:#555;width:38%;white-space:nowrap}'
-            + '.fb{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:4px;padding:6px 8px;margin:6px 0}'
-            + '.ib{background:#fef9c3;border:1px solid #fcd34d;border-radius:4px;padding:6px 8px;margin:5px 0;font-size:9px;color:#92400e;line-height:1.5}'
-            + '.ft{text-align:center;margin-top:8px;font-size:8px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:5px}'
+            + '.hdr{text-align:center;border-bottom:2px solid #1e3a5f;padding-bottom:6px;margin-bottom:7px}'
+            + '.ag{font-size:8px;color:#555;line-height:1.3}.on{font-size:10px;font-weight:700;color:#1e3a5f;line-height:1.25}'
+            + '.rb{background:#1e3a5f;color:#fff;border-radius:4px;padding:7px 9px;margin:5px 0;display:flex;align-items:center;gap:9px}'
+            + '.rb .rl{flex:1;text-align:center;min-width:0}'
+            + '.rb .qbox{background:#fff;border-radius:3px;padding:3px 3px 1px;text-align:center;flex-shrink:0}'
+            + '.rb .qbox img{width:74px;height:74px;display:block}'
+            + '.rb .qbox span{display:block;font-size:5.5px;font-weight:700;color:#1e3a5f;letter-spacing:.4px}'
+            + 'table{width:100%;border-collapse:collapse;margin:4px 0}'
+            + 'td{padding:1px 6px;font-size:10px}td:first-child{font-weight:700;color:#555;width:38%;white-space:nowrap}'
+            + '.fb{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:4px;padding:5px 8px;margin:5px 0}'
+            + '.ib{background:#fef9c3;border:1px solid #fcd34d;border-radius:4px;padding:5px 8px;margin:4px 0;font-size:8.5px;color:#92400e;line-height:1.45}'
+            + '.rtn{border:2px solid #b91c1c;background:#fef2f2;border-radius:4px;padding:5px 8px;margin:4px 0;color:#7f1d1d;font-size:9px;line-height:1.45}'
+            + '.rtn .rh{font-size:10px;font-weight:700;letter-spacing:.5px;margin-bottom:2px}'
+            + '.rtn .fil{font-style:italic;color:#991b1b;margin-top:2px}'
+            + '.ack{border:1px dashed #9ca3af;border-radius:4px;padding:4px 8px;margin:4px 0;font-size:8px;color:#374151;line-height:1.7}'
+            + '.ft{text-align:center;margin-top:5px;font-size:7.5px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:4px}'
             + '@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}'
             + '</style></head><body>'
             + '<div class="hdr"><div class="ag">Republic of the Philippines &bull; Dept. of Transportation</div>'
             + '<div class="on">LAND TRANSPORTATION FRANCHISING &amp; REGULATORY BOARD</div>'
             + '<div class="ag">Regional Franchising and Regulatory Office XII &bull; Koronadal City</div>'
-            + '<div style="font-size:15px;font-weight:700;color:#1e3a5f;margin-top:4px">TRANSACTION STUB</div></div>'
-            + '<div class="rb"><div style="font-size:9px;opacity:.8;text-transform:uppercase;letter-spacing:1px">Reference / Docket Number (MC 2017-002)</div>'
-            + '<div style="font-size:18px;font-weight:700;letter-spacing:2px;font-family:monospace">' + t.referenceNumber + '</div>'
-            + '<div style="font-size:10px;opacity:.7;margin-top:2px">Office: ' + office + ' &bull; Code: ' + mc + '</div></div>'
+            + '<div style="font-size:13px;font-weight:700;color:#1e3a5f;margin-top:3px;letter-spacing:1px">TRANSACTION STUB</div></div>'
+            + '<div class="rb"><div class="rl">'
+            + '<div style="font-size:8px;opacity:.8;text-transform:uppercase;letter-spacing:1px">Reference / Docket No. (MC 2017-002)</div>'
+            + '<div style="font-size:17px;font-weight:700;letter-spacing:1.5px;font-family:monospace">' + t.referenceNumber + '</div>'
+            + '<div style="font-size:9px;opacity:.7;margin-top:2px">Office: ' + office + ' &bull; Code: ' + mc + '</div></div>'
+            + '<div class="qbox"><img src="' + stubQR + '" alt="QR ' + t.referenceNumber + '"/><span>SCAN TO VERIFY</span></div></div>'
             + '<table><tr><td>Applicant:</td><td><strong>' + t.applicantName + '</strong></td></tr>'
             + '<tr><td>Entity:</td><td><strong>' + (t.entityName||'—') + '</strong></td></tr>'
             + '<tr><td>Date:</td><td>' + (t.dateReceived||dateStr) + ' ' + timeStr + '</td></tr>'
             + '<tr><td>Contact:</td><td>' + (t.contactNumber||'—') + '</td></tr></table>'
-            + '<div style="border-top:1px dashed #ccc;margin:8px 0"></div>'
-            + '<div style="font-size:9px;color:#555;font-weight:700;text-transform:uppercase;margin-bottom:2px">Transaction</div>'
-            + '<div style="font-size:11px;font-weight:700;color:#1e3a5f;line-height:1.4;margin-bottom:4px">' + t.requestType + '</div>'
-            + '<span style="display:inline-block;padding:2px 8px;border-radius:3px;font-size:9px;font-weight:700;background:' + offBg + ';color:' + offColor + '">' + office + '</span>'
-            + '<div class="fb"><div style="font-size:9px;color:#15803d;font-weight:700">Processing Fee</div>'
-            + '<div style="font-size:13px;font-weight:700;color:#15803d">' + (fee||'See Cashier') + '</div>'
-            + '<div style="font-size:9px;color:#15803d">Time: ' + (ptime||'See schedule') + '</div></div>'
-            + '<div class="ib"><strong>Present stub at:</strong> Cashier (payment) &bull; Processor (requirements) &bull; Releasing Counter (pickup)</div>'
+            + '<div style="border-top:1px dashed #ccc;margin:5px 0"></div>'
+            + '<div style="font-size:8px;color:#555;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Transaction</div>'
+            + '<div style="font-size:' + rtSize + ';font-weight:700;color:#1e3a5f;line-height:1.3;border-left:3px solid ' + offColor + ';background:' + offBg + ';padding:3px 6px;margin-top:2px">' + t.requestType + '</div>'
+            + '<div class="fb"><span style="font-size:8px;color:#15803d;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Fee</span>&nbsp;'
+            + '<span style="font-size:12px;font-weight:700;color:#15803d">' + (fee||'See Cashier') + '</span>'
+            + '<div style="font-size:8.5px;color:#15803d">Processing time: ' + (ptime||'See schedule') + '</div></div>'
+            + '<div class="ib"><strong>Present stub at:</strong> Cashier &bull; Processor &bull; Releasing Counter '
+            + '&mdash; staff may scan the QR instead.</div>'
+            + '<div class="rtn"><div class="rh">&#9888; PLEASE RETURN THIS STUB</div>'
+            + 'Keep this stub. Once the <strong>LTO has confirmed</strong> your unit or document, return it to the '
+            + '<strong>RFRO XII Releasing Counter</strong> so your record can be closed. Do not throw it away.'
+            + '<div class="fil">Ibalik ang stub sa Releasing Counter ng RFRO XII pagkatapos ng kumpirmasyon ng LTO.</div></div>'
+            + '<div class="ack"><strong>STUB RETURNED</strong> (RFRO XII use only) &nbsp; Date: __________<br>'
+            + 'Returned by: ______________ Received by: ______________</div>'
             + '<div class="ft">Printed: ' + dateStr + ' ' + timeStr + ' &bull; Stage: ' + t.stage + '<br>RFRO XII TMS &bull; LTFRB Region XII</div>'
+            // Print on window.onload so the QR image is fully fetched first — a fixed
+            // timeout can fire before the image lands and print an empty box. Then
+            // shrink to fit: the 4x6 page minus .3in margins leaves 5.4in = 518 CSS px,
+            // and a long service name would otherwise spill onto a second stub.
+            + '\u003cscript>window.onload=function(){'
+            + 'var MAX=518,h=document.body.scrollHeight;'
+            + 'if(h>MAX){document.body.style.zoom=Math.max(0.72,MAX/h);}'
+            + 'window.print();}\u003c/script>'
             + '</body></html>';
         var win = window.open('','_blank','width=420,height=640');
         if (!win){alert('Allow pop-ups to print.');return;}
         win.document.write(html);win.document.close();win.focus();
-        setTimeout(function(){win.print();},500);
     }
 
 </script>
@@ -3551,7 +3616,9 @@ function onEntityInput(val, inputId, dropId) {
                     <strong>Staff Instructions:</strong><br>
                     1. Write the Reference Number on the client's paper request form<br>
                     2. Inform client of processing fee and processing time<br>
-                    3. Direct client to the Cashier for payment
+                    3. Direct client to the Cashier for payment<br>
+                    4. Print the stub &mdash; tell the client to <strong>keep it</strong> and to <strong>return it to the
+                    Releasing Counter after confirmation from the LTO</strong>
                 </div>
             </div>
             <input type="hidden" id="refModalId">
