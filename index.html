@@ -1204,6 +1204,7 @@ const ENTITY_MASTER = [
     let qrPrintData = null;
     let stubPanelVisible = false;
     let _ltoTxnId = null;
+    let _reprintTxnId = null;
     let roster = (function() {
         var saved = JSON.parse(localStorage.getItem('rfro_roster') || 'null');
         var defaults = [
@@ -1667,10 +1668,21 @@ const ENTITY_MASTER = [
                 + (c.ltoRefNo ? '<div class="text-xs text-gray-600">LTO Ref#: ' + c.ltoRefNo + '</div>' : '')
                 + (c.verifiedBy ? '<div class="text-xs text-gray-600">Verified by: ' + c.verifiedBy + '</div>' : '')
                 + (c.remarks ? '<div class="text-xs text-gray-600">Remarks: ' + c.remarks + '</div>' : '')
+                + ((t.stub.reprints && t.stub.reprints.length)
+                    ? '<div class="mt-2 pt-2 border-t border-red-200">'
+                        + '<div class="text-xs font-bold text-red-700">&#9888; ' + t.stub.reprints.length + ' reprint(s)</div>'
+                        + t.stub.reprints.slice().reverse().map(function(r) {
+                            return '<div class="text-xs text-gray-600">' + new Date(r.at).toLocaleDateString('en-PH')
+                                + ' &mdash; ' + escHtml(r.by) + ' (' + escHtml(r.role) + '): ' + escHtml(r.reason) + '</div>';
+                        }).join('')
+                      + '</div>'
+                    : '')
                 + '</div>';
         }
-        var stubBtnHTML = '<button onclick="printTransactionStub(\'' + t.id + '\')" class="w-full bg-slate-700 text-white px-4 py-2 rounded-lg hover:bg-slate-800 mb-3 text-sm font-medium">&#128424; Print Acceptance Stub (with QR)</button>'
-            + (stubIssued(t) ? '<button onclick="openLTOModal()" class="w-full bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 mb-3 text-sm font-medium">&#10003; Log Stub Return / LTO Confirmation</button>' : '');
+        var stubBtnHTML = stubIssued(t)
+            ? '<button onclick="printTransactionStub(\'' + t.id + '\')" class="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 mb-3 text-sm font-medium">&#9888; Reprint Acceptance Stub (PIN required)</button>'
+                + '<button onclick="openLTOModal()" class="w-full bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 mb-3 text-sm font-medium">&#10003; Log Stub Return / LTO Confirmation</button>'
+            : '<button onclick="printTransactionStub(\'' + t.id + '\')" class="w-full bg-slate-700 text-white px-4 py-2 rounded-lg hover:bg-slate-800 mb-3 text-sm font-medium">&#128424; Print Acceptance Stub (with QR)</button>';
 
         panel.innerHTML = '<div class="p-4">'
             + '<div class="mb-3"><span class="px-3 py-1 rounded-full text-sm border ' + stageColor(t.stage) + '">' + t.stage + '</span></div>'
@@ -1921,7 +1933,7 @@ const ENTITY_MASTER = [
                     + '<div class="text-xs text-gray-600 truncate">' + t.applicantName + (t.entityName ? ' / ' + t.entityName : '') + '</div>'
                     + '<div class="text-xs text-gray-400">Issued ' + new Date(t.stub.issuedAt).toLocaleDateString('en-PH')
                     + ' &bull; ' + days + ' day(s) ago'
-                    + (t.stub.count > 1 ? ' &bull; ' + t.stub.count + ' copies' : '')
+                    + (t.stub.count > 1 ? ' &bull; ' + t.stub.count + ' copies (' + ((t.stub.reprints || []).length) + ' reprint' + ((t.stub.reprints || []).length === 1 ? '' : 's') + ')' : '')
                     + (c.ltoRefNo ? ' &bull; LTO Ref# ' + c.ltoRefNo : '') + '</div>'
                     + '</div>'
                     + '<span class="shrink-0 text-xs px-2 py-1 rounded-full border ' + tone + '">' + badge + '</span>'
@@ -2667,6 +2679,12 @@ function onEntityInput(val, inputId, dropId) {
         return TXN_LIST.find(function(x) { return x.name === t.requestType; }) || null;
     }
 
+    function escHtml(v) {
+        return String(v == null ? '' : v)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
     function qrImageUrl(data, size) {
         return 'https://api.qrserver.com/v1/create-qr-code/?size=' + size + 'x' + size + '&data=' + data;
     }
@@ -2687,8 +2705,9 @@ function onEntityInput(val, inputId, dropId) {
         return 'Returned ' + (c.returnedAt ? c.returnedAt.split('T')[0] : '') + ' - awaiting LTO';
     }
 
-    // Docket payload carried by the acceptance-stub QR code.
-    function getStubQRData(t) {
+    // Docket payload carried by the acceptance-stub QR code. Pass copyNo when
+    // printing so a reprint scans differently from the original.
+    function getStubQRData(t, copyNo) {
         var e = txnServiceEntry(t);
         var lines = [
             'LTFRB RFRO XII - ACCEPTANCE STUB',
@@ -2705,6 +2724,7 @@ function onEntityInput(val, inputId, dropId) {
             'Stage : ' + t.stage,
             ACCEPTANCE_TAG
         ];
+        if (copyNo > 1) lines.splice(2, 0, 'Copy : #' + copyNo + ' (REPRINT - NOT THE ORIGINAL)');
         return encodeURIComponent(lines.join(' | '));
     }
 
@@ -3669,6 +3689,13 @@ function onEntityInput(val, inputId, dropId) {
     function printTransactionStub(txnId) {
         var t = transactions.find(function(x){ return x.id === txnId; });
         if (!t) { alert('Transaction not found.'); return; }
+        // The stub is an official acceptance document, so the first print goes
+        // straight through at the counter but every copy after it is signed for.
+        if (stubIssued(t)) { openReprintModal(t.id); return; }
+        doPrintStub(t, null);
+    }
+
+    function doPrintStub(t, reprint) {
         var now      = new Date();
         var dateStr  = now.toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'});
         var timeStr  = now.toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'});
@@ -3679,8 +3706,15 @@ function onEntityInput(val, inputId, dropId) {
         var ptime    = entry?entry.time:(t.estimatedTime||'');
         var offBg    = office==='RFRO'?'#dbeafe':'#f3f4f6';
         var offColor = office==='RFRO'?'#1e40af':'#6b7280';
-        var stubQr   = qrImageUrl(getStubQRData(t), 240);
         var copyNo   = ((t.stub && t.stub.count) || 0) + 1;
+        var stubQr   = qrImageUrl(getStubQRData(t, copyNo), 240);
+        var bandHTML = copyNo > 1
+            ? '<div class="rp"><div class="rpt">&#9888; Reprint &mdash; Copy #' + copyNo + ' &mdash; Not the Original Acceptance</div>'
+                + '<div class="rps">Reprinted ' + dateStr + ' ' + timeStr
+                + (reprint ? ' by ' + escHtml(reprint.by) + ' (' + escHtml(reprint.role) + ')' : '')
+                + (reprint && reprint.reason ? '<br>Reason: ' + escHtml(reprint.reason) : '')
+                + '</div></div>'
+            : '';
         var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Stub</title>'
             + '<style>@page{size:4in 6in;margin:.3in}body{font-family:Arial,sans-serif;font-size:11px;color:#111;margin:0}'
             + '.hdr{text-align:center;border-bottom:2px solid #1e3a5f;padding-bottom:8px;margin-bottom:10px}'
@@ -3696,6 +3730,9 @@ function onEntityInput(val, inputId, dropId) {
             + '.qrb{text-align:center;margin:6px 0}'
             + '.qrb img{display:block;margin:0 auto}'
             + '.qrc{font-size:8px;color:#6b7280;margin-top:3px;line-height:1.3}'
+            + '.rp{background:#fee2e2;border:2px solid #b91c1c;border-radius:4px;padding:5px 8px;margin:7px 0;text-align:center}'
+            + '.rpt{font-size:11px;font-weight:700;color:#b91c1c;text-transform:uppercase;letter-spacing:.5px;line-height:1.3}'
+            + '.rps{font-size:8px;color:#7f1d1d;margin-top:3px;line-height:1.4}'
             + '.ft{text-align:center;margin-top:8px;font-size:8px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:5px}'
             + '@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}'
             + '</style></head><body>'
@@ -3706,6 +3743,7 @@ function onEntityInput(val, inputId, dropId) {
             + '<div class="rb"><div style="font-size:9px;opacity:.8;text-transform:uppercase;letter-spacing:1px">Reference / Docket Number (MC 2017-002)</div>'
             + '<div style="font-size:18px;font-weight:700;letter-spacing:2px;font-family:monospace">' + t.referenceNumber + '</div>'
             + '<div style="font-size:10px;opacity:.7;margin-top:2px">Office: ' + office + ' &bull; Code: ' + mc + '</div></div>'
+            + bandHTML
             + '<div class="acc"><div class="acct">' + ACCEPTANCE_NOTICE + '</div>'
             + '<div class="accs">Issued by LTFRB Regional Franchising and Regulatory Office XII. Keep this stub &mdash; it must be returned to this Office and confirmed by the LTO Regional Office.</div></div>'
             + '<div class="qrb"><img src="' + stubQr + '" width="130" height="130"/>'
@@ -3723,30 +3761,98 @@ function onEntityInput(val, inputId, dropId) {
             + '<div style="font-size:9px;color:#15803d">Time: ' + (ptime||'See schedule') + '</div></div>'
             + '<div class="ib"><strong>Present stub at:</strong> Cashier (payment) &bull; Processor (requirements) &bull; Releasing Counter (pickup)'
             + '<br><strong>Return this stub</strong> to RFRO XII for logging once the unit confirmation has been verified by the LTO Regional Office.</div>'
-            + '<div class="ft">Printed: ' + dateStr + ' ' + timeStr + ' &bull; Copy #' + copyNo + ' &bull; Stage: ' + t.stage + '<br>RFRO XII TMS &bull; LTFRB Region XII</div>'
+            + '<div class="ft">Printed: ' + dateStr + ' ' + timeStr + ' &bull; Copy #' + copyNo
+            + (reprint ? ' (' + escHtml(reprint.by) + ')' : '') + ' &bull; Stage: ' + t.stage
+            + '<br>RFRO XII TMS &bull; LTFRB Region XII</div>'
             + '</body></html>';
         var win = window.open('','_blank','width=420,height=640');
         if (!win){alert('Allow pop-ups to print.');return;}
         win.document.write(html);win.document.close();win.focus();
         setTimeout(function(){win.print();},500);
-        recordStubIssued(t);
+        recordStubIssued(t, reprint);
     }
 
     // Every printed stub is an official acceptance, so each print is logged.
-    async function recordStubIssued(t) {
+    // issuedAt is only ever set once, so the dashboard counts transactions
+    // rather than sheets of paper; reprints accumulate in t.stub.reprints.
+    async function recordStubIssued(t, reprint) {
         t.stub = t.stub || { count: 0 };
         t.stub.count = (t.stub.count || 0) + 1;
         t.stub.lastPrintedAt = new Date().toISOString();
         if (!t.stub.issuedAt) t.stub.issuedAt = t.stub.lastPrintedAt;
-        t.history.push({
-            stage: t.stage,
-            timestamp: t.stub.lastPrintedAt,
-            notes: 'Acceptance stub printed (copy #' + t.stub.count + ') \u2014 official acceptance of the application for confirmation of the unit'
-        });
+        var note;
+        if (reprint) {
+            t.stub.reprints = t.stub.reprints || [];
+            t.stub.reprints.push({
+                at: t.stub.lastPrintedAt, by: reprint.by, role: reprint.role, reason: reprint.reason
+            });
+            t.stub.lastPrintedBy = reprint.by;
+            note = 'Acceptance stub REPRINTED (copy #' + t.stub.count + ') by ' + reprint.by
+                 + ' (' + reprint.role + ') \u2014 ' + reprint.reason;
+        } else {
+            note = 'Acceptance stub printed \u2014 official acceptance of the application for confirmation of the unit';
+        }
+        t.history.push({ stage: t.stage, timestamp: t.stub.lastPrintedAt, notes: note });
         await save();
         renderDashboard();
         renderTransactions();
         if (selectedTransaction && selectedTransaction.id === t.id) renderDetails();
+    }
+
+    // ── ACCEPTANCE STUB REPRINT (PIN-SIGNED) ───────────────────────
+    function openReprintModal(txnId) {
+        var t = transactions.find(function(x) { return x.id === txnId; });
+        if (!t || !stubIssued(t)) return;
+        _reprintTxnId = t.id;
+        document.getElementById('reprintRefLabel').textContent = t.referenceNumber + ' \u2014 ' + t.applicantName;
+        document.getElementById('reprintCopyLabel').textContent =
+            'This prints copy #' + (t.stub.count + 1) + '. Original issued '
+            + new Date(t.stub.issuedAt).toLocaleString('en-PH') + '.';
+
+        var hist = document.getElementById('reprintHistory');
+        var prior = t.stub.reprints || [];
+        if (prior.length) {
+            hist.innerHTML = '<div class="text-xs font-bold text-gray-600 mb-1 uppercase tracking-wide">Previous reprints</div>'
+                + prior.slice().reverse().map(function(r) {
+                    return '<div class="text-xs text-gray-600 border-l-2 border-red-300 pl-2 mb-1">'
+                        + new Date(r.at).toLocaleString('en-PH') + ' \u2014 ' + escHtml(r.by)
+                        + ' (' + escHtml(r.role) + ')<br><span class="text-gray-400">' + escHtml(r.reason) + '</span></div>';
+                }).join('');
+            hist.classList.remove('hidden');
+        } else {
+            hist.innerHTML = '';
+            hist.classList.add('hidden');
+        }
+
+        document.getElementById('reprint-reason').value = '';
+        document.getElementById('reprint-remarks').value = '';
+        document.getElementById('reprint-pin').value = '';
+        document.getElementById('reprintPINError').classList.add('hidden');
+        document.getElementById('reprintModal').classList.remove('hidden');
+    }
+
+    function closeReprintModal() {
+        document.getElementById('reprintModal').classList.add('hidden');
+        _reprintTxnId = null;
+    }
+
+    function confirmReprint() {
+        var t = transactions.find(function(x) { return x.id === _reprintTxnId; });
+        if (!t) { closeReprintModal(); return; }
+        var reason  = document.getElementById('reprint-reason').value;
+        var remarks = document.getElementById('reprint-remarks').value.trim();
+        if (!reason) { alert('Please select a reason for the reprint.'); return; }
+        if (reason === 'Other' && !remarks) { alert('Please describe the reason for the reprint.'); return; }
+        // Any active roster member may reprint \u2014 the record, not the gate, is the control.
+        var user = verifyPin(document.getElementById('reprint-pin').value);
+        if (!user) { document.getElementById('reprintPINError').classList.remove('hidden'); return; }
+        document.getElementById('reprintPINError').classList.add('hidden');
+        closeReprintModal();
+        doPrintStub(t, {
+            by: user.name,
+            role: user.role,
+            reason: reason + (remarks ? ' \u2014 ' + remarks : '')
+        });
     }
 
     // ── STUB RETURN / LTO REGIONAL OFFICE CONFIRMATION ───────────────
@@ -3810,6 +3916,46 @@ function onEntityInput(val, inputId, dropId) {
     }
 
 </script>
+
+    <!-- ACCEPTANCE STUB REPRINT MODAL -->
+    <div id="reprintModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg max-w-md w-full p-6 max-h-screen overflow-y-auto">
+            <h2 class="text-xl font-bold mb-1 text-red-700">&#9888; Reprint Acceptance Stub</h2>
+            <p id="reprintRefLabel" class="text-sm text-gray-500 mb-3"></p>
+            <div class="bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-800 mb-4 leading-relaxed">
+                The stub is the official acceptance of the application. Every copy after the first is marked
+                <strong>REPRINT</strong> on the paper and recorded against your name.
+                <div id="reprintCopyLabel" class="mt-2 font-semibold"></div>
+            </div>
+            <div id="reprintHistory" class="hidden mb-4"></div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Reason for Reprint *</label>
+                    <select id="reprint-reason" class="w-full px-3 py-2 border rounded-lg text-sm">
+                        <option value="">-- Select a reason --</option>
+                        <option value="Client lost the original stub">Client lost the original stub</option>
+                        <option value="Printer error / illegible print">Printer error / illegible print</option>
+                        <option value="Additional copy requested by client">Additional copy requested by client</option>
+                        <option value="Office file copy">Office file copy</option>
+                        <option value="Other">Other (describe below)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Remarks <span class="text-xs text-gray-400">(required if Other)</span></label>
+                    <textarea id="reprint-remarks" rows="2" placeholder="Details of the request..." class="w-full px-3 py-2 border rounded-lg text-sm"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Your Personal PIN *</label>
+                    <input type="password" id="reprint-pin" placeholder="Enter your assigned PIN" class="w-full px-3 py-2 border rounded-lg">
+                    <div id="reprintPINError" class="hidden text-xs text-red-500 mt-1">Incorrect PIN, or that staff account is inactive.</div>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="closeReprintModal()" class="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
+                <button onclick="confirmReprint()" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium">&#128424; Print Copy</button>
+            </div>
+        </div>
+    </div>
 
     <!-- STUB RETURN / LTO CONFIRMATION MODAL -->
     <div id="ltoModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
