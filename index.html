@@ -221,11 +221,11 @@
                 </div>
                 <div class="bg-teal-50 border-l-4 border-teal-500 p-5 rounded-lg shadow">
                     <div class="text-3xl font-bold text-teal-700" id="ltoConfirmedCount">0</div>
-                    <div class="text-teal-600 text-sm mt-1">&#10003; Confirmed by LTO Regional Office</div>
+                    <div class="text-teal-600 text-sm mt-1">&#10003; Registered with LTO</div>
                 </div>
                 <div class="bg-rose-50 border-l-4 border-rose-500 p-5 rounded-lg shadow">
                     <div class="text-3xl font-bold text-rose-700" id="stubAwaitingCount">0</div>
-                    <div class="text-rose-600 text-sm mt-1">&#8987; Awaiting LTO Confirmation</div>
+                    <div class="text-rose-600 text-sm mt-1">&#8987; Awaiting LTO Registration</div>
                 </div>
             </div>
 
@@ -233,7 +233,7 @@
                 <button onclick="toggleStubPanel()" class="w-full flex items-center justify-between p-5 text-left">
                     <div class="flex items-center gap-2">
                         <span class="text-xl">&#128203;</span>
-                        <span class="font-semibold text-indigo-700">Stub Issuance &amp; LTO Confirmation Log</span>
+                        <span class="font-semibold text-indigo-700">Stub Issuance &amp; LTO Registration Log</span>
                         <span id="stubAwaitingBadge" class="hidden bg-rose-500 text-white text-xs font-bold px-2 py-0.5 rounded-full"></span>
                     </div>
                     <span id="stubChevron" class="text-indigo-500 font-bold text-lg">&#9660;</span>
@@ -248,7 +248,7 @@
                     <button onclick="toggleOverdue()" class="w-full flex items-center justify-between p-5 text-left">
                         <div class="flex items-center gap-2">
                             <span class="text-xl">&#9888;&#65039;</span>
-                            <span class="font-semibold text-orange-700">Overdue Requests (&gt;24 hrs at current stage)</span>
+                            <span class="font-semibold text-orange-700">Overdue Requests (past the stage time standard)</span>
                             <span id="overdueCountBadge" class="hidden bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full"></span>
                         </div>
                         <span id="overdueChevron" class="text-orange-500 font-bold text-lg">&#9660;</span>
@@ -261,6 +261,34 @@
                     <div class="font-semibold text-emerald-700 mb-2">&#128176; Today's Collection</div>
                     <div class="text-3xl font-bold text-emerald-700" id="todayCollection">&#8369; 0.00</div>
                     <div class="text-xs text-emerald-600 mt-2 space-y-0.5" id="todayBreakdown"></div>
+                </div>
+            </div>
+
+            <!-- CONFIRMATION OF UNITS MONITORING (MC 2026-102) -->
+            <div class="bg-white border-l-4 border-blue-600 rounded-lg shadow mb-6">
+                <div class="p-4 border-b flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <h2 class="text-xl font-semibold text-blue-900">&#128220; Confirmation of Units &mdash; MC 2026-102</h2>
+                        <p class="text-xs text-gray-500 mt-0.5">Physical copy due to the operator within 5 days of filing (sec. 3)</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="date" id="confCsvDate" class="px-2 py-1 border rounded-lg text-sm">
+                        <button onclick="exportConfirmationsCSV()" class="bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 text-sm font-medium">&#128228; Daily CSV to Central Office</button>
+                    </div>
+                </div>
+                <div class="p-4">
+                    <div id="confBuckets" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 mb-4"></div>
+                    <div class="flex gap-4 mb-3">
+                        <div class="flex-1 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                            <div class="text-2xl font-bold text-amber-700" id="confDueCount">0</div>
+                            <div class="text-xs text-amber-700">Due within 1 day</div>
+                        </div>
+                        <div class="flex-1 bg-red-50 border border-red-200 rounded-lg p-3">
+                            <div class="text-2xl font-bold text-red-700" id="confBreachedCount">0</div>
+                            <div class="text-xs text-red-700">Past the 5-day deadline</div>
+                        </div>
+                    </div>
+                    <div id="confSlaList" class="text-sm"></div>
                 </div>
             </div>
 
@@ -839,17 +867,27 @@
         DECISION_PREPARED: 'Decision Prepared',
         RELEASED: 'Decision Released',
         COMPLETED: 'Completed',
-        QR_PRINTED: 'QR Code Printed'
+        QR_PRINTED: 'QR Code Printed',
+        // ── Confirmation of Units chain (LTFRB MC No. 2026-102) ──────
+        CONF_VALIDATION:   'Records Validation',
+        CONF_VERIFICATION: 'Unit Verification',
+        CONF_APPROVAL:     'Confirmation Approval',
+        CONF_ISSUED:       'Confirmation Issued',
+        CONF_RELEASED:     'Released to Operator'
     };
+
+    // MC 2026-102 sec. 3 — physical copy to the operator within five (5)
+    // days from the filing of the request.
+    const CONF_ISSUE_DEADLINE_DAYS = 5;
 
     const VIOLATION_SCHEDULE = [{"code": "V001", "category": "Franchise", "description": "Refusal to render service / convey passenger", "basis": "JAO 2014-001 Rule IV.j.37", "fine1": 1000, "fine2": 2000, "fine3": 5000}, {"code": "V002", "category": "Franchise", "description": "Overcharging / undercharging of fare", "basis": "JAO 2014-001 Rule IV.j.38", "fine1": 1000, "fine2": 2000, "fine3": 5000}, {"code": "V003", "category": "Franchise", "description": "No CPC / franchise presented during apprehension", "basis": "JAO 2014-001 Rule IV.j.39", "fine1": 1000, "fine2": 2000, "fine3": 5000}, {"code": "V004", "category": "Franchise", "description": "Trip cutting", "basis": "JAO 2014-001 Rule IV.j.49", "fine1": 1000, "fine2": 2000, "fine3": 5000}, {"code": "V005", "category": "Franchise", "description": "Pick-up / drop-off outside designated terminal", "basis": "JAO 2014-001 Rule IV.j.46", "fine1": 1000, "fine2": 2000, "fine3": 5000}, {"code": "V006", "category": "Franchise", "description": "Failure to display fare matrix", "basis": "JAO 2014-001 Rule IV.j.50", "fine1": 1000, "fine2": 2000, "fine3": 5000}, {"code": "V007", "category": "Franchise", "description": "No sign board", "basis": "JAO 2014-001 Rule IV.j.45", "fine1": 1000, "fine2": 2000, "fine3": 5000}, {"code": "V008", "category": "Franchise", "description": "Failure to provide fare discount to entitled passengers", "basis": "JAO 2014-001 Rule IV.j.42", "fine1": 1000, "fine2": 2000, "fine3": 5000}, {"code": "V009", "category": "Franchise", "description": "Breach of franchise conditions under CPC Terms", "basis": "JAO 2014-001 Rule IV.j.51", "fine1": 1000, "fine2": 2000, "fine3": 5000}, {"code": "V010", "category": "Franchise", "description": "Fraud / fake CPC, OR/CR, plates, stickers, tags", "basis": "JAO 2014-001 Rule IV.j.40", "fine1": 3000, "fine2": 5000, "fine3": 10000}, {"code": "V011", "category": "Vehicle", "description": "Operating with defective parts and accessories", "basis": "JAO 2014-001 Rule II.d", "fine1": 5000, "fine2": 5000, "fine3": 5000}, {"code": "V012", "category": "Vehicle", "description": "Driving unregistered / expired registration", "basis": "JAO 2014-001 Rule II.a", "fine1": 10000, "fine2": 10000, "fine3": 10000}, {"code": "V013", "category": "Vehicle", "description": "Unauthorized motor vehicle modification", "basis": "JAO 2014-001 Rule II.b", "fine1": 5000, "fine2": 5000, "fine3": 5000}, {"code": "V014", "category": "Vehicle", "description": "Smoke belching (emission violation)", "basis": "JAO 2014-001 Rule II.f / RA 8749", "fine1": 2000, "fine2": 4000, "fine3": 6000}, {"code": "V015", "category": "Vehicle", "description": "Improper / tampered license plates or stickers", "basis": "JAO 2014-001 Rule II.e", "fine1": 5000, "fine2": 5000, "fine3": 5000}, {"code": "V016", "category": "Driver", "description": "Reckless driving", "basis": "JAO 2014-001 Rule I.e", "fine1": 2000, "fine2": 3000, "fine3": 10000}, {"code": "V017", "category": "Driver", "description": "Driving without valid driver's license", "basis": "JAO 2014-001 Rule I.a", "fine1": 3000, "fine2": 3000, "fine3": 3000}, {"code": "V018", "category": "Driver", "description": "Failure to wear seat belt / require passengers to wear", "basis": "JAO 2014-001 Rule I.g1-g2", "fine1": 1000, "fine2": 2000, "fine3": 5000}, {"code": "V019", "category": "Driver", "description": "Carrying illegal / prohibited cargoes", "basis": "JAO 2014-001 Rule IV.j.47", "fine1": 1000, "fine2": 2000, "fine3": 5000}, {"code": "V020", "category": "Driver", "description": "Overloading beyond authorized capacity", "basis": "JAO 2014-001 Rule III", "fine1": 1000, "fine2": 2000, "fine3": 5000}, {"code": "V021", "category": "Safety", "description": "No fire extinguisher or required STOP/GO signage", "basis": "JAO 2014-001 Rule IV.j.48", "fine1": 1000, "fine2": 2000, "fine3": 5000}, {"code": "V022", "category": "Safety", "description": "Obstruction — loading/unloading causing traffic blockage", "basis": "JAO 2014-001 Rule IV.j.35", "fine1": 1000, "fine2": 2000, "fine3": 5000}, {"code": "V023", "category": "Administrative", "description": "Non-payment of supervision fees (per unit per year)", "basis": "LTFRB MC 88-017", "fine1": 500, "fine2": 1000, "fine3": 2000}, {"code": "V024", "category": "Administrative", "description": "Failure to comply with LTFRB order / directive", "basis": "LTFRB Circulars", "fine1": 1000, "fine2": 2000, "fine3": 5000}, {"code": "V025", "category": "Administrative", "description": "Late filing of petition / application beyond reglementary period", "basis": "LTFRB Rules of Procedure", "fine1": 210, "fine2": 420, "fine3": 1260}];
 
     const ROLE_DEFS = {
-        Receiving:  { label:'Receiving Staff',              color:'#1565c0', stages:['Request Prepared','Submitted','Checklisting','Pre-acceptance Review','Incomplete - Awaiting Documents','Not Accepted'] },
+        Receiving:  { label:'Receiving Staff',              color:'#1565c0', stages:['Request Prepared','Submitted','Checklisting','Pre-acceptance Review','Incomplete - Awaiting Documents','Not Accepted','Records Validation'] },
         Cashier:    { label:'Cashier',                      color:'#1b5e20', stages:['Assessment','Payment Pending','Payment Completed'] },
-        Processor:  { label:'Technical / Legal / Admin',    color:'#4527a0', stages:['Technical Processing','Legal Processing','Administrative Processing','Hearing Scheduled'] },
-        Approver:   { label:'RD Approver',                  color:'#e65100', stages:['Awaiting RD Approval','Decision Prepared'] },
-        Releasing:  { label:'Releasing Staff',              color:'#006064', stages:['Decision Released','Completed','QR Code Printed'] },
+        Processor:  { label:'Technical / Legal / Admin',    color:'#4527a0', stages:['Technical Processing','Legal Processing','Administrative Processing','Hearing Scheduled','Unit Verification'] },
+        Approver:   { label:'RD Approver',                  color:'#e65100', stages:['Awaiting RD Approval','Decision Prepared','Confirmation Approval'] },
+        Releasing:  { label:'Releasing Staff',              color:'#006064', stages:['Decision Released','Completed','QR Code Printed','Released to Operator'] },
         Admin:      { label:'Administrator',                color:'#b71c1c', stages:'ALL' }
     };
 
@@ -1231,19 +1269,19 @@ const ENTITY_MASTER = [
     function getStageAging(t) {
         // Returns array of { stage, hours, overdue } for each history entry
         var result = [];
-        var entries = t.history.filter(function(h) { return h.type !== 'EDIT'; });
+        var entries = t.history.filter(function(h) { return !h.type; });
         for (var i = 0; i < entries.length; i++) {
             var h = entries[i];
             var start = new Date(h.timestamp);
             var end = (i + 1 < entries.length) ? new Date(entries[i + 1].timestamp) : new Date();
             var hours = (end - start) / 3600000;
-            result.push({ stage: h.stage, hours: hours, overdue: hours > 24 });
+            result.push({ stage: h.stage, hours: hours, overdue: hours > stageSla(h.stage) });
         }
         return result;
     }
 
     function getCurrentStageHours(t) {
-        var entries = t.history.filter(function(h) { return h.type !== 'EDIT'; });
+        var entries = t.history.filter(function(h) { return !h.type; });
         if (!entries.length) return 0;
         var last = entries[entries.length - 1];
         return (new Date() - new Date(last.timestamp)) / 3600000;
@@ -1258,7 +1296,7 @@ const ENTITY_MASTER = [
 
     function isOverdue(t) {
         if (t.stage === STAGES.COMPLETED || t.stage === STAGES.NOT_ACCEPTED || t.stage === STAGES.QR_PRINTED) return false;
-        return getCurrentStageHours(t) > 24;
+        return getCurrentStageHours(t) > stageSla(t.stage);
     }
 
     function formatAge(hours) {
@@ -1268,6 +1306,14 @@ const ENTITY_MASTER = [
     }
 
     // ── COLLECTIONS ───────────────────────────────────────────────────
+    // Calendar date in the office's own timezone. toISOString() is UTC and
+    // would file a Confirmation issued before 08:00 PH under the day before.
+    function localDate(d) {
+        var x = d ? new Date(d) : new Date();
+        return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0')
+             + '-' + String(x.getDate()).padStart(2, '0');
+    }
+
     function peso(n) {
         return '\u20B1\u00A0' + parseFloat(n || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
@@ -1322,6 +1368,7 @@ const ENTITY_MASTER = [
         var now = new Date();
         var ym = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
         document.getElementById('monthPicker').value = ym;
+        document.getElementById('confCsvDate').value = localDate();
         document.getElementById('colMonth').value = ym;
         document.getElementById('searchBox').addEventListener('input', renderTransactions);
         document.getElementById('filterStage').addEventListener('change', renderTransactions);
@@ -1487,6 +1534,12 @@ const ENTITY_MASTER = [
         if (!amount || amount <= 0) { alert('Please enter a valid amount.'); return; }
         if (!mode) { alert('Please select a mode of payment.'); return; }
         var t = transactions.find(function(tx) { return tx.id === selectedTransaction.id; });
+        // A request can bounce back to Payment Pending; keep the superseded
+        // receipt rather than overwriting it, the O.R. is an audit record.
+        if (t.payment && t.payment.or) {
+            t.priorPayments = t.priorPayments || [];
+            t.priorPayments.push(t.payment);
+        }
         t.payment = {
             amount: amount,
             mode: mode,
@@ -1593,7 +1646,7 @@ const ENTITY_MASTER = [
             return;
         }
         var t = selectedTransaction;
-        var nextStages = getNextStages(t.stage);
+        var nextStages = getNextStages(t.stage, t);
         var aging = getStageAging(t);
         var totalD = getTotalDays(t);
         var isDone = (t.stage === STAGES.COMPLETED || t.stage === STAGES.QR_PRINTED);
@@ -1647,14 +1700,14 @@ const ENTITY_MASTER = [
         }
 
         // Acceptance stub + LTO Regional Office confirmation
-        var c = t.ltoConfirmation || {};
+        var c = ltoReg(t) || {};
         var stubHTML = '';
         if (stubIssued(t)) {
             var box, label;
-            if (ltoConfirmed(t)) {
-                box = 'bg-teal-50 border-teal-200'; label = '<span class="text-teal-700 font-bold">&#10003; Confirmed / verified by ' + (c.ltoOffice || 'LTO Regional Office') + '</span>';
+            if (ltoRegistered(t)) {
+                box = 'bg-teal-50 border-teal-200'; label = '<span class="text-teal-700 font-bold">&#10003; Registered with ' + (c.ltoOffice || 'LTO Regional Office') + '</span>';
             } else if (stubReturned(t)) {
-                box = 'bg-amber-50 border-amber-200'; label = '<span class="text-amber-700 font-bold">&#8617; Stub returned &mdash; awaiting LTO confirmation</span>';
+                box = 'bg-amber-50 border-amber-200'; label = '<span class="text-amber-700 font-bold">&#8617; Stub returned &mdash; awaiting LTO registration</span>';
             } else {
                 box = 'bg-rose-50 border-rose-200'; label = '<span class="text-rose-700 font-bold">&#128424; Stub issued &mdash; not yet returned</span>';
             }
@@ -1664,7 +1717,7 @@ const ENTITY_MASTER = [
                 + '<div class="text-xs text-gray-600">Issued: ' + new Date(t.stub.issuedAt).toLocaleString('en-PH')
                 + (t.stub.count > 1 ? ' &bull; ' + t.stub.count + ' copies printed' : '') + '</div>'
                 + (c.returnedAt ? '<div class="text-xs text-gray-600">Returned: ' + c.returnedAt.split('T')[0] + '</div>' : '')
-                + (c.confirmedAt ? '<div class="text-xs text-gray-600">LTO confirmed: ' + c.confirmedAt.split('T')[0] + '</div>' : '')
+                + (c.registeredAt ? '<div class="text-xs text-gray-600">LTO registered: ' + c.registeredAt.split('T')[0] + '</div>' : '')
                 + (c.ltoRefNo ? '<div class="text-xs text-gray-600">LTO Ref#: ' + c.ltoRefNo + '</div>' : '')
                 + (c.verifiedBy ? '<div class="text-xs text-gray-600">Verified by: ' + c.verifiedBy + '</div>' : '')
                 + (c.remarks ? '<div class="text-xs text-gray-600">Remarks: ' + c.remarks + '</div>' : '')
@@ -1679,9 +1732,36 @@ const ENTITY_MASTER = [
                     : '')
                 + '</div>';
         }
+        // Confirmation of Units (MC 2026-102)
+        var confHTML = '', confBtnHTML = '';
+        if (isConfirmationTxn(t)) {
+            var cf = t.confirmation;
+            if (cf && cf.confNo) {
+                confHTML = '<div class="mb-4 border rounded-lg p-3 bg-blue-50 border-blue-200">'
+                    + '<div class="text-xs font-bold text-gray-600 mb-2 uppercase tracking-wide">&#128220; Confirmation Issued</div>'
+                    + '<div class="text-sm font-bold text-blue-800">' + cf.confNo + '</div>'
+                    + '<div class="text-xs text-gray-600">Issued: ' + new Date(cf.issuedAt).toLocaleString('en-PH') + '</div>'
+                    + (cf.verifiedBy ? '<div class="text-xs text-gray-600">Verified by: ' + escHtml(cf.verifiedBy) + '</div>' : '')
+                    + (cf.approvedBy ? '<div class="text-xs text-gray-600">Approved by: ' + escHtml(cf.approvedBy) + '</div>' : '')
+                    + (cf.prints > 1 ? '<div class="text-xs text-red-600">' + cf.prints + ' copies printed</div>' : '')
+                    + '</div>';
+                confBtnHTML = '<button onclick="printConfirmation(transactions.find(function(x){return x.id===\'' + t.id + '\'}), transactions.find(function(x){return x.id===\'' + t.id + '\'}).confirmation)" class="w-full bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 mb-3 text-sm font-medium">&#128424; Reprint Confirmation (Annex &quot;A&quot;)</button>';
+            } else {
+                var gaps = confirmationGateCheck(t);
+                confHTML = '<div class="mb-4 border rounded-lg p-3 ' + (gaps.length ? 'bg-gray-50 border-gray-200' : 'bg-green-50 border-green-200') + '">'
+                    + '<div class="text-xs font-bold text-gray-600 mb-2 uppercase tracking-wide">&#128220; Confirmation of Units &mdash; MC 2026-102</div>'
+                    + (gaps.length
+                        ? '<div class="text-xs text-gray-700">Not yet issuable:</div><ul class="text-xs text-gray-600 list-disc ml-4 mt-1">'
+                            + gaps.map(function(g){ return '<li>' + escHtml(g) + '</li>'; }).join('') + '</ul>'
+                        : '<div class="text-sm text-green-700 font-bold">&#10003; All requirements met &mdash; ready to issue</div>')
+                    + '</div>';
+                confBtnHTML = '<button onclick="openConfirmationModal(\'' + t.id + '\')" class="w-full ' + (gaps.length ? 'bg-gray-400' : 'bg-blue-700 hover:bg-blue-800') + ' text-white px-4 py-2 rounded-lg mb-3 text-sm font-medium">&#128220; Issue Confirmation (Annex &quot;A&quot;)</button>';
+            }
+        }
+
         var stubBtnHTML = stubIssued(t)
             ? '<button onclick="printTransactionStub(\'' + t.id + '\')" class="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 mb-3 text-sm font-medium">&#9888; Reprint Acceptance Stub (PIN required)</button>'
-                + '<button onclick="openLTOModal()" class="w-full bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 mb-3 text-sm font-medium">&#10003; Log Stub Return / LTO Confirmation</button>'
+                + '<button onclick="openLTOModal()" class="w-full bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 mb-3 text-sm font-medium">&#10003; Log Stub Return / LTO Registration</button>'
             : '<button onclick="printTransactionStub(\'' + t.id + '\')" class="w-full bg-slate-700 text-white px-4 py-2 rounded-lg hover:bg-slate-800 mb-3 text-sm font-medium">&#128424; Print Acceptance Stub (with QR)</button>';
 
         panel.innerHTML = '<div class="p-4">'
@@ -1703,8 +1783,10 @@ const ENTITY_MASTER = [
             + agingHTML
             + (t.units && t.units.length ? buildUnitTable(t.units,(ENTITY_MASTER.find(function(e){return e.name===t.entityName;})||{}).denom||'') : '')
             + payHTML
+            + confHTML
             + stubHTML
             + updateHTML
+            + confBtnHTML
             + stubBtnHTML
             + qrHTML
             + '<div><div class="text-sm font-semibold mb-2">History</div>'
@@ -1718,7 +1800,16 @@ const ENTITY_MASTER = [
             + '</div></div>';
     }
 
-    function getNextStages(stage) {
+    // A Confirmation of Units request follows the chain prescribed by
+    // MC 2026-102 rather than the generic franchise-processing chain.
+    // TXN_LIST marks those services with the MC 2017-002 code 'YVC'.
+    function isConfirmationTxn(t) {
+        var e = t && txnServiceEntry(t);
+        return !!(e && e.mc === 'YVC');
+    }
+
+    function getNextStages(stage, t) {
+        if (t && isConfirmationTxn(t)) return getConfirmationNextStages(stage);
         var map = {};
         map[STAGES.PREPARED] = [STAGES.SUBMITTED];
         map[STAGES.SUBMITTED] = [STAGES.CHECKLISTING];
@@ -1736,6 +1827,23 @@ const ENTITY_MASTER = [
         map[STAGES.DECISION_PREPARED] = [STAGES.RELEASED];
         map[STAGES.RELEASED] = [STAGES.COMPLETED];
         map[STAGES.COMPLETED] = [STAGES.QR_PRINTED];
+        return map[stage] || [];
+    }
+
+    function getConfirmationNextStages(stage) {
+        var map = {};
+        map[STAGES.PREPARED]          = [STAGES.CONF_VALIDATION];
+        map[STAGES.CONF_VALIDATION]   = [STAGES.INCOMPLETE, STAGES.NOT_ACCEPTED, STAGES.PAYMENT_PENDING];
+        map[STAGES.INCOMPLETE]        = [STAGES.CONF_VALIDATION];
+        map[STAGES.PAYMENT_PENDING]   = [STAGES.PAYMENT_COMPLETED];
+        map[STAGES.PAYMENT_COMPLETED] = [STAGES.CONF_VERIFICATION];
+        map[STAGES.CONF_VERIFICATION] = [STAGES.CONF_APPROVAL, STAGES.INCOMPLETE];
+        // Confirmation Approval has no dropdown successor on purpose: the only
+        // way forward is to actually issue the Annex "A" certificate, which
+        // advances the stage itself. Skipping a step means no certificate.
+        map[STAGES.CONF_APPROVAL]     = [];
+        map[STAGES.CONF_ISSUED]       = [STAGES.CONF_RELEASED];
+        map[STAGES.CONF_RELEASED]     = [STAGES.COMPLETED];
         return map[stage] || [];
     }
 
@@ -1892,8 +2000,8 @@ const ENTITY_MASTER = [
         // Acceptance stub issuance + LTO Regional Office confirmation
         var issued    = transactions.filter(stubIssued);
         var returned  = transactions.filter(stubReturned);
-        var confirmed = transactions.filter(ltoConfirmed);
-        var awaiting  = issued.filter(function(t) { return !ltoConfirmed(t); });
+        var confirmed = transactions.filter(ltoRegistered);
+        var awaiting  = issued.filter(function(t) { return !ltoRegistered(t); });
         document.getElementById('stubIssuedCount').textContent    = issued.length;
         document.getElementById('stubReturnedCount').textContent  = returned.length;
         document.getElementById('ltoConfirmedCount').textContent  = confirmed.length;
@@ -1914,13 +2022,13 @@ const ENTITY_MASTER = [
             logEl.innerHTML = issued.slice().sort(function(a, b) {
                 return new Date(b.stub.issuedAt) - new Date(a.stub.issuedAt);
             }).map(function(t) {
-                var c = t.ltoConfirmation || {};
+                var c = ltoReg(t) || {};
                 var badge, tone;
-                if (c.status === 'Confirmed') {
-                    badge = '&#10003; Confirmed by ' + (c.ltoOffice || 'LTO Regional Office');
+                if (c.status === 'Registered') {
+                    badge = '&#10003; Registered with ' + (c.ltoOffice || 'LTO Regional Office');
                     tone  = 'bg-teal-100 text-teal-800 border-teal-300';
                 } else if (c.returnedAt) {
-                    badge = '&#8617; Returned &mdash; awaiting LTO confirmation';
+                    badge = '&#8617; Returned &mdash; awaiting LTO registration';
                     tone  = 'bg-amber-100 text-amber-800 border-amber-300';
                 } else {
                     badge = '&#128424; Issued &mdash; not yet returned';
@@ -1929,8 +2037,8 @@ const ENTITY_MASTER = [
                 var days = Math.floor((Date.now() - new Date(t.stub.issuedAt)) / 86400000);
                 return '<div class="flex justify-between items-start gap-2 py-2 border-b border-gray-100 last:border-0">'
                     + '<div class="min-w-0">'
-                    + '<div class="font-semibold text-indigo-800 text-sm">' + t.referenceNumber + '</div>'
-                    + '<div class="text-xs text-gray-600 truncate">' + t.applicantName + (t.entityName ? ' / ' + t.entityName : '') + '</div>'
+                    + '<div class="font-semibold text-indigo-800 text-sm">' + escHtml(t.referenceNumber) + '</div>'
+                    + '<div class="text-xs text-gray-600 truncate">' + escHtml(t.applicantName) + (t.entityName ? ' / ' + escHtml(t.entityName) : '') + '</div>'
                     + '<div class="text-xs text-gray-400">Issued ' + new Date(t.stub.issuedAt).toLocaleDateString('en-PH')
                     + ' &bull; ' + days + ' day(s) ago'
                     + (t.stub.count > 1 ? ' &bull; ' + t.stub.count + ' copies (' + ((t.stub.reprints || []).length) + ' reprint' + ((t.stub.reprints || []).length === 1 ? '' : 's') + ')' : '')
@@ -1940,6 +2048,8 @@ const ENTITY_MASTER = [
                     + '</div>';
             }).join('');
         }
+
+        renderConfirmationPanel();
 
         // Today collection
         var tp = todayPaid();
@@ -2442,7 +2552,7 @@ const ENTITY_MASTER = [
             + 'In Progress        : ' + pending + '\n'
             + 'Completed          : ' + completed + '\n'
             + 'Not Accepted       : ' + rejected + '\n'
-            + 'Overdue (>24 hrs)  : ' + overdue + '\n'
+            + 'Overdue (past stage standard) : ' + overdue + '\n'
             + "Today's Collection : " + peso(todayTotal) + '\n\n'
             + 'TRANSACTIONS BY STAGE\n---------------------\n' + stageText
             + '\n\nRespectfully,\nRecords Officer, RFRO XII';
@@ -2452,9 +2562,27 @@ const ENTITY_MASTER = [
 
     // ── OVERDUE TOGGLE ────────────────────────────────────────────────
     // ── ACCEPTANCE STUB / LTO CONFIRMATION STATE ──────────────────────
-    function stubIssued(t)   { return !!(t.stub && t.stub.issuedAt); }
-    function stubReturned(t) { return !!(t.ltoConfirmation && t.ltoConfirmation.returnedAt); }
-    function ltoConfirmed(t) { return !!(t.ltoConfirmation && t.ltoConfirmation.status === 'Confirmed'); }
+    // Under MC 2026-102 the LTFRB confirms the unit and the LTO registers it.
+    // Records written before that circular used 'ltoConfirmation' with a
+    // 'Confirmed' status, so reads normalise both shapes.
+    function ltoReg(t) {
+        var c = t && (t.ltoRegistration || t.ltoConfirmation);
+        if (!c) return null;
+        return {
+            status:       c.status === 'Confirmed' ? 'Registered' : (c.status || ''),
+            returnedAt:   c.returnedAt || '',
+            registeredAt: c.registeredAt || c.confirmedAt || '',
+            ltoOffice:    c.ltoOffice || '',
+            ltoRefNo:     c.ltoRefNo || '',
+            verifiedBy:   c.verifiedBy || '',
+            remarks:      c.remarks || '',
+            recordedAt:   c.recordedAt || ''
+        };
+    }
+
+    function stubIssued(t)    { return !!(t.stub && t.stub.issuedAt); }
+    function stubReturned(t)  { var c = ltoReg(t); return !!(c && c.returnedAt); }
+    function ltoRegistered(t) { var c = ltoReg(t); return !!(c && c.status === 'Registered'); }
 
     function toggleStubPanel() {
         stubPanelVisible = !stubPanelVisible;
@@ -2633,7 +2761,7 @@ function onEntityInput(val, inputId, dropId) {
     function openStageModal() {
         var t = selectedTransaction;
         if (!t) return;
-        var nextStages = getNextStages(t.stage);
+        var nextStages = getNextStages(t.stage, t);
         document.getElementById('stageModalRef').textContent = t.referenceNumber + ' — ' + t.applicantName;
         document.getElementById('stageModalCurrent').textContent = t.stage;
         document.getElementById('stageModalPIN').value = '';
@@ -2696,13 +2824,13 @@ function onEntityInput(val, inputId, dropId) {
     }
 
     function ltoStatusText(t) {
-        var c = t.ltoConfirmation;
+        var c = ltoReg(t);
         if (!c) return 'Pending';
-        if (c.status === 'Confirmed') {
-            return 'Confirmed ' + (c.confirmedAt ? c.confirmedAt.split('T')[0] : '')
+        if (c.status === 'Registered') {
+            return 'Registered ' + (c.registeredAt ? c.registeredAt.split('T')[0] : '')
                 + (c.ltoRefNo ? ' (LTO Ref# ' + c.ltoRefNo + ')' : '');
         }
-        return 'Returned ' + (c.returnedAt ? c.returnedAt.split('T')[0] : '') + ' - awaiting LTO';
+        return 'Returned ' + (c.returnedAt ? c.returnedAt.split('T')[0] : '') + ' - awaiting LTO registration';
     }
 
     // Docket payload carried by the acceptance-stub QR code. Pass copyNo when
@@ -2751,7 +2879,7 @@ function onEntityInput(val, inputId, dropId) {
             'Mode : ' + (pmt.mode || 'N/A'),
             'Status : ' + t.stage,
             'Stub Issued : ' + (stubIssued(t) ? t.stub.issuedAt.split('T')[0] : 'Not issued'),
-            'LTO Confirmation : ' + ltoStatusText(t)
+            'LTO Registration : ' + ltoStatusText(t)
         ];
         // Use encodeURIComponent on the full joined string so the QR API
         // receives it as a proper URL parameter — the API decodes it before
@@ -2777,7 +2905,7 @@ function onEntityInput(val, inputId, dropId) {
             ['Mode', pmt.mode || '—'],
             ['Status', t.stage],
             ['Stub Issued', stubIssued(t) ? new Date(t.stub.issuedAt).toLocaleDateString('en-PH') + (t.stub.count > 1 ? ' (' + t.stub.count + ' copies)' : '') : 'Not issued'],
-            ['LTO Confirmation', ltoStatusText(t)]
+            ['LTO Registration', ltoStatusText(t)]
         ].map(function(row) {
             return '<div class="flex gap-2 py-1 border-b border-gray-100 text-sm">'
                 + '<span class="text-gray-500 w-28 shrink-0">' + row[0] + ':</span>'
@@ -2834,7 +2962,7 @@ function onEntityInput(val, inputId, dropId) {
             + '<tr><td>Mode</td><td>' + (pmt.mode || '—') + '</td></tr>'
             + '<tr><td>Status</td><td style="color:#15803d;font-weight:700">' + t.stage + '</td></tr>'
             + '<tr><td>Acceptance Stub</td><td>' + (stubIssued(t) ? 'Issued ' + t.stub.issuedAt.split('T')[0] + (t.stub.count > 1 ? ' (' + t.stub.count + ' copies)' : '') : 'Not issued') + '</td></tr>'
-            + '<tr><td>LTO Confirmation</td><td>' + ltoStatusText(t) + '</td></tr>'
+            + '<tr><td>LTO Registration</td><td>' + ltoStatusText(t) + '</td></tr>'
             + '</table>'
             + '<div class="placement">&#128204;&nbsp; Attach this slip at the BACK of the FIRST PAGE of the released document. The corner QR (top-right) can be used as a quick-scan reference.</div>'
             + '<div class="ftr">Scan QR to verify &middot; LTFRB RFRO XII &middot; ' + today + '</div>'
@@ -3685,6 +3813,475 @@ function onEntityInput(val, inputId, dropId) {
     setInterval(loadTransactions, 30000);
 
 
+    // ══ CONFIRMATION OF UNITS — LTFRB MC No. 2026-102 ═══════════════════
+    // Annex "A" is the prescribed Confirmation format. Sec. 4 lets the LTO
+    // validate it through the QR code, so the QR carries a bare verification
+    // URL (a mixed text/URL payload is not offered as a link by most scanners).
+
+    var _confSeq = (function(){
+        try { return JSON.parse(localStorage.getItem('rfro_conf_seq') || '{}'); } catch(e) { return {}; }
+    }());
+
+    var _confTxnId = null;
+
+    // Base for the QR verification link. Falls back to the production host when
+    // the page is opened from a file:// URL, where location.origin is "null".
+    var VERIFY_BASE = (function(){
+        try {
+            var o = window.location.origin;
+            return (o && o.indexOf('http') === 0) ? o : 'https://r12-routingslip.vercel.app';
+        } catch(e) { return 'https://r12-routingslip.vercel.app'; }
+    }());
+
+    // Fixed list from the LTFRB Central Office submission template.
+    var CONF_REMARKS = [
+        '1. Dropping and Substitution',
+        '2. Sale and Transfer',
+        '3. Duplicate LTO OR/CR',
+        '4. Change Engine',
+        '5. Change Color'
+    ];
+
+    // The counter lives in this browser's localStorage, so two counters on two
+    // machines would hand out the same number. Until the Worker allocates the
+    // series, seed from the highest number already present in the synced
+    // transaction list so a second machine cannot reuse one.
+    function highestConfSeq(prefix) {
+        var max = 0;
+        transactions.forEach(function(t) {
+            var no = t.confirmation && t.confirmation.confNo;
+            if (!no || no.indexOf(prefix + '-') !== 0) return;
+            var n = parseInt(no.slice(prefix.length + 1), 10);
+            if (!isNaN(n) && n > max) max = n;
+        });
+        return max;
+    }
+
+    function generateConfirmationNo(d) {
+        var yr  = (d ? new Date(d) : new Date()).getFullYear();
+        var key = 'CONF-XII-' + yr;
+        var next = Math.max(_confSeq[key] || 0, highestConfSeq(key)) + 1;
+        _confSeq[key] = next;
+        localStorage.setItem('rfro_conf_seq', JSON.stringify(_confSeq));
+        return key + '-' + String(next).padStart(5, '0');
+    }
+
+    function confVerifyUrl(confNo) {
+        return VERIFY_BASE + '/verify?c=' + encodeURIComponent(confNo);
+    }
+
+    // Name recorded against the PIN that moved the transaction into a stage.
+    function stageActor(t, stage) {
+        var hits = (t.history || []).filter(function(h){ return h.stage === stage && !h.type; });
+        if (!hits.length) return null;
+        var h = hits[hits.length - 1];
+        return { name: h.by || '', at: h.timestamp };
+    }
+
+    // Everything sec. 2 and sec. 3 require before a Confirmation may issue.
+    function confirmationGateCheck(t) {
+        var missing = [];
+        var pmt = t.payment || {};
+        if (!pmt.amount)  missing.push('Payment is not recorded — sec. 2 requires payment of the applicable fees.');
+        else if (!pmt.or) missing.push('The recorded payment has no O.R. number.');
+        if (!stageActor(t, STAGES.CONF_VERIFICATION))
+            missing.push('Unit Verification has not been recorded — sec. 3 requires verification against a valid franchise or a timely-filed EOV.');
+        if (!stageActor(t, STAGES.CONF_APPROVAL))
+            missing.push('Confirmation Approval has not been recorded.');
+        var units = t.units || [];
+        if (!units.length) missing.push('No units are listed on this request.');
+        units.forEach(function(u, i) {
+            var gaps = [];
+            if (!u.plate)   gaps.push('plate no.');
+            if (!u.engine)  gaps.push('motor no.');
+            if (!u.chassis) gaps.push('chassis no.');
+            if (gaps.length) missing.push('Unit ' + (i + 1) + ' is missing ' + gaps.join(', ') + '.');
+        });
+        return missing;
+    }
+
+    function openConfirmationModal(txnId) {
+        var t = transactions.find(function(x){ return x.id === (txnId || (selectedTransaction && selectedTransaction.id)); });
+        if (!t) { alert('Transaction not found.'); return; }
+
+        var missing = confirmationGateCheck(t);
+        if (missing.length) {
+            alert('This Confirmation cannot be issued yet:\n\n• ' + missing.join('\n• ')
+                + '\n\nComplete the missing step(s) first. Under MC 2026-102 the Confirmation is what the LTO relies on to register the unit.');
+            return;
+        }
+
+        _confTxnId = t.id;
+        var ent = ENTITY_MASTER.find(function(e){ return e.name === t.entityName || e.fullName === t.entityName; }) || {};
+        var c = t.confirmation || {};
+
+        document.getElementById('confRefLabel').textContent = t.referenceNumber + ' — ' + (ent.fullName || t.entityName || t.applicantName);
+        document.getElementById('conf-class').value    = c.classification || 'Others';
+        document.getElementById('conf-granted').value  = c.dateGranted || '';
+        document.getElementById('conf-eov').value      = c.eovFiled || '';
+        document.getElementById('conf-findings').value = c.findings || '';
+        document.getElementById('conf-remarks').value  = c.remarks || '';
+        document.getElementById('conf-recom').value    = c.recommendations || '';
+
+        // Expiry comes from the franchise master as dd/mm/yyyy; show it read-only.
+        document.getElementById('conf-expiry-note').textContent =
+            'Franchise master: Case ' + (ent.caseNo || '—') + ' · ' + (ent.denom || '—')
+            + ' · ' + (ent.nau || 0) + ' authorised unit(s) · expiry ' + (ent.expiry || '—');
+
+        var prior = (c.units || []);
+        document.getElementById('confUnitRemarks').innerHTML = (t.units || []).map(function(u, i) {
+            var sel = (prior[i] && prior[i].remarks) || '';
+            return '<div style="display:grid;grid-template-columns:130px 1fr;gap:8px;align-items:center;margin-bottom:6px">'
+                + '<div style="font-size:11px;font-weight:600;color:#1e3a5f">' + escHtml(u.plate || ('Unit ' + (i + 1))) + '</div>'
+                + '<select id="conf_urem_' + i + '" class="px-2 py-1 border rounded text-xs">'
+                + '<option value="">— no remark —</option>'
+                + CONF_REMARKS.map(function(r){
+                    return '<option value="' + escHtml(r) + '"' + (sel === r ? ' selected' : '') + '>' + escHtml(r) + '</option>';
+                  }).join('')
+                + '</select></div>';
+        }).join('');
+
+        document.getElementById('confirmationModal').classList.remove('hidden');
+    }
+
+    function closeConfirmationModal() {
+        document.getElementById('confirmationModal').classList.add('hidden');
+        _confTxnId = null;
+    }
+
+    function submitConfirmation() {
+        var t = transactions.find(function(x){ return x.id === _confTxnId; });
+        if (!t) { closeConfirmationModal(); return; }
+        var granted = document.getElementById('conf-granted').value;
+        if (!granted) { alert('Date Granted is required on Annex "A".'); return; }
+
+        var issuance = {
+            classification:  document.getElementById('conf-class').value.trim() || 'Others',
+            dateGranted:     granted,
+            eovFiled:        document.getElementById('conf-eov').value,
+            findings:        document.getElementById('conf-findings').value.trim(),
+            remarks:         document.getElementById('conf-remarks').value.trim(),
+            recommendations: document.getElementById('conf-recom').value.trim(),
+            units: (t.units || []).map(function(u, i) {
+                var el = document.getElementById('conf_urem_' + i);
+                return { plate: u.plate || '', remarks: el ? el.value : '' };
+            })
+        };
+        closeConfirmationModal();
+        printConfirmation(t, issuance);
+    }
+
+    function printConfirmation(t, issuance) {
+        var missing = confirmationGateCheck(t);
+        if (missing.length) { alert('Cannot issue:\n\n• ' + missing.join('\n• ')); return; }
+
+        var ent = ENTITY_MASTER.find(function(e){ return e.name === t.entityName || e.fullName === t.entityName; }) || {};
+        var pmt = t.payment || {};
+        var verifier = stageActor(t, STAGES.CONF_VERIFICATION) || { name: '', at: '' };
+        var approver = stageActor(t, STAGES.CONF_APPROVAL)     || { name: '', at: '' };
+
+        // Claim the print window BEFORE allocating a number: a blocked pop-up
+        // would otherwise consume one and leave a gap in the official series.
+        var w = window.open('', '_blank', 'width=780,height=900');
+        if (!w) { alert('Please allow pop-ups to print the Confirmation. No Confirmation number has been used.'); return; }
+
+        var isReissue = !!(t.confirmation && t.confirmation.confNo);
+        var confNo    = isReissue ? t.confirmation.confNo : generateConfirmationNo(t.dateReceived);
+        var issuedAt  = isReissue ? t.confirmation.issuedAt : new Date().toISOString();
+        var dcDate    = localDate(issuedAt);
+        var dcShort   = dcDate.split('-').reverse().join('/');
+        var yc        = dcDate.slice(0, 4);
+        var qr        = qrImageUrl(encodeURIComponent(confVerifyUrl(confNo)), 300);
+
+        function ts(iso) {
+            if (!iso) return '';
+            var d = new Date(iso);
+            return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0')
+                 + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0') + ':' + String(d.getSeconds()).padStart(2,'0');
+        }
+        function fld(label, value) {
+            return '<tr><td class="lbl">' + label + '</td><td class="val">' + escHtml(value || '') + '</td></tr>';
+        }
+
+        var unitRows = (t.units || []).map(function(u, i) {
+            var rem = (issuance.units && issuance.units[i] && issuance.units[i].remarks) || '';
+            return '<tr>'
+                + '<td>' + escHtml(u.make || '') + '</td>'
+                + '<td>' + escHtml(u.engine || '') + '</td>'
+                + '<td>' + escHtml(u.chassis || '') + '</td>'
+                + '<td>' + escHtml(u.plate || '') + '</td>'
+                + '<td>' + escHtml(u.year || '') + '</td>'
+                + '<td>' + dcShort + '</td>'
+                + '<td>' + yc + '</td>'
+                + '<td>' + escHtml(rem) + '</td>'
+                + '</tr>';
+        }).join('');
+
+        var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Confirmation ' + confNo + '</title><style>'
+            + '@page{size:8.5in 13in;margin:.6in}'
+            + 'body{font-family:"Times New Roman",Times,serif;font-size:12px;color:#000;margin:0}'
+            + '.annex{text-align:right;font-weight:700;font-style:italic;font-size:12px;letter-spacing:1px;margin-bottom:8px}'
+            + '.hd{display:table;width:100%;margin-bottom:14px}'
+            + '.hd .txt{display:table-cell;vertical-align:top;font-size:12px;line-height:1.35}'
+            + '.hd .txt .b{font-weight:700;font-size:13px}'
+            + '.ttlrow{display:table;width:100%;margin:6px 0 10px}'
+            + '.ttl{display:table-cell;text-align:center;vertical-align:middle;font-size:17px;font-weight:700;letter-spacing:4px;text-decoration:underline}'
+            + '.qr{display:table-cell;width:120px;text-align:right;vertical-align:top}'
+            + '.qr img{width:104px;height:104px;display:block;margin-left:auto}'
+            + '.qr .cap{font-size:7px;color:#333;text-align:center;margin-top:2px;letter-spacing:0}'
+            + '.cls{font-weight:700;text-decoration:underline;font-size:13px;margin:4px 0 8px}'
+            + '.cols{display:table;width:100%}.col{display:table-cell;width:50%;vertical-align:top}'
+            + 'table.f{border-collapse:collapse}'
+            + 'table.f td{padding:1px 4px;font-size:12px;vertical-align:top}'
+            + 'table.f td.lbl{white-space:nowrap;width:105px}'
+            + 'table.f td.val{font-weight:400}'
+            + '.rule{border-top:3px double #000;margin:10px 0 4px}'
+            + '.iou{text-align:center;font-size:14px;font-weight:700;letter-spacing:3px;margin:4px 0}'
+            + 'table.u{width:100%;border-collapse:collapse;margin-top:4px}'
+            + 'table.u th{text-align:left;font-size:11px;font-weight:700;text-decoration:underline;padding:3px 4px;letter-spacing:1px}'
+            + 'table.u td{font-size:11px;padding:3px 4px}'
+            + '.recom{margin-top:14px;font-size:12px}'
+            + '.recom .line{border-bottom:1px solid #999;height:14px;margin-top:2px}'
+            + '.sig{display:table;width:100%;margin-top:26px}'
+            + '.sig .l{display:table-cell;width:58%;font-size:12px;letter-spacing:2px}'
+            + '.sig .r{display:table-cell;font-size:12px;letter-spacing:2px}'
+            + '.nm{letter-spacing:0;font-weight:700;border-bottom:1px solid #000;padding:0 18px}'
+            + '.or{margin-top:30px;font-size:11px;letter-spacing:1px}'
+            + '.pg{text-align:center;margin-top:22px;font-size:12px;letter-spacing:1px}'
+            + '.ovr{margin-top:10px;border:1px solid #999;padding:5px 8px;font-size:9px;color:#333;text-align:center}'
+            + '@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}'
+            + '</style></head><body>'
+            + '<div class="annex">ANNEX A</div>'
+            + '<div class="hd"><div class="txt">'
+            + 'Republic of the Philippines<br>Department of Transportation<br>'
+            + '<span class="b">LAND TRANSPORTATION FRANCHISING AND REGULATORY BOARD</span><br>'
+            + 'Regional Franchising and Regulatory Office XII &bull; Koronadal City'
+            + '</div></div>'
+            + '<div class="ttlrow"><div class="ttl">C O N F I R M A T I O N</div>'
+            + '<div class="qr"><img src="' + qr + '" alt="QR"/><div class="cap">Scan to validate<br>' + confNo + '</div></div></div>'
+            + '<div class="cls">' + escHtml(issuance.classification || 'Others') + '</div>'
+            + '<div class="cols">'
+            + '<div class="col"><table class="f">'
+            + fld('Operator:',     ent.fullName || t.entityName || t.applicantName)
+            + fld('Bus. Address:', ent.address)
+            + fld('Date Granted:', issuance.dateGranted)
+            + fld('Expiry Date:',  ent.expiry)
+            + fld('Findings:',     issuance.findings)
+            + fld('Route Name:',   ent.route)
+            + fld('Remarks:',      issuance.remarks)
+            + '</table></div>'
+            + '<div class="col"><table class="f">'
+            + fld('Case No.:',         ent.caseNo)
+            + fld('Deno.:',            ent.denom)
+            + fld('No. Autho. Units:', String(ent.nau || (t.units || []).length))
+            + fld('EOV Filed:',        issuance.eovFiled)
+            + '</table></div>'
+            + '</div>'
+            + '<div class="rule"></div><div class="iou">I D E N T I T Y &nbsp; O F &nbsp; U N I T S</div><div class="rule"></div>'
+            + '<table class="u"><tr><th>MAKE</th><th>MOTOR NO</th><th>CHASSIS NO</th><th>PLATE #</th><th>YM</th><th>DC</th><th>YC</th><th>REMARKS</th></tr>'
+            + unitRows + '</table>'
+            + '<div class="rule"></div>'
+            + '<div class="recom">Recommendations: ' + escHtml(issuance.recommendations || '') + '<div class="line"></div></div>'
+            + '<div class="sig"><div class="l">V e r i f i e d &nbsp; b y : <span class="nm">' + escHtml(verifier.name) + '</span></div>'
+            + '<div class="r">D a t e : <span style="letter-spacing:0">' + ts(verifier.at) + '</span></div></div>'
+            + '<div class="sig"><div class="l">A p p r o v e d &nbsp; b y : <span class="nm">' + escHtml(approver.name) + '</span></div>'
+            + '<div class="r">D a t e : <span style="letter-spacing:0">' + ts(approver.at) + '</span></div></div>'
+            + '<div class="or">O.R. NO. : ' + escHtml(pmt.or || '') + '<br>D a t e &nbsp; : ' + escHtml(pmt.date || '') + '</div>'
+            + (isReissue ? '<div class="ovr">REPRINT of Confirmation ' + confNo + ' first issued ' + localDate(issuedAt)
+                         + '. This is a copy of the same Confirmation, not a new one.</div>' : '')
+            + '<div class="pg">Page 1 of 1</div>'
+            + '</body></html>';
+
+        w.document.write(html); w.document.close(); w.focus();
+        setTimeout(function(){ w.print(); }, 600);
+
+        recordConfirmationIssued(t, issuance, confNo, issuedAt, isReissue);
+    }
+
+    async function recordConfirmationIssued(t, issuance, confNo, issuedAt, isReissue) {
+        t.confirmation = t.confirmation || {};
+        t.confirmation.confNo          = confNo;
+        t.confirmation.issuedAt        = issuedAt;
+        t.confirmation.classification  = issuance.classification;
+        t.confirmation.dateGranted     = issuance.dateGranted;
+        t.confirmation.eovFiled        = issuance.eovFiled;
+        t.confirmation.findings        = issuance.findings;
+        t.confirmation.remarks         = issuance.remarks;
+        t.confirmation.recommendations = issuance.recommendations;
+        t.confirmation.units           = issuance.units;
+        t.confirmation.verifiedBy      = (stageActor(t, STAGES.CONF_VERIFICATION) || {}).name || '';
+        t.confirmation.approvedBy      = (stageActor(t, STAGES.CONF_APPROVAL) || {}).name || '';
+        t.confirmation.verifyUrl       = confVerifyUrl(confNo);
+        t.confirmation.prints          = (t.confirmation.prints || 0) + 1;
+
+        if (isReissue) {
+            t.history.push({ stage: t.stage, type: 'NOTE', timestamp: new Date().toISOString(),
+                notes: 'Confirmation ' + confNo + ' reprinted (copy #' + t.confirmation.prints + ')' });
+        } else {
+            t.stage = STAGES.CONF_ISSUED;
+            t.history.push({ stage: STAGES.CONF_ISSUED, timestamp: issuedAt,
+                notes: 'Confirmation ' + confNo + ' issued under MC 2026-102 — verified by '
+                     + (t.confirmation.verifiedBy || 'n/a') + ', approved by ' + (t.confirmation.approvedBy || 'n/a')
+                     + '. Physical copy due to the operator within ' + CONF_ISSUE_DEADLINE_DAYS + ' days of filing.' });
+        }
+        selectedTransaction = t;
+        await save();
+        renderDashboard();
+        renderTransactions();
+        renderDetails();
+    }
+
+    // ── CONFIRMATION MONITORING, SLA CLOCK AND CENTRAL OFFICE CSV ───────
+
+    function confEntity(t) {
+        return ENTITY_MASTER.find(function(e){ return e.name === t.entityName || e.fullName === t.entityName; }) || {};
+    }
+
+    function confIssued(t)   { return !!(t.confirmation && t.confirmation.confNo); }
+    function confReleased(t) { return t.stage === STAGES.CONF_RELEASED || t.stage === STAGES.COMPLETED; }
+
+    // Sec. 3 — the operator must HOLD the physical copy within five days of
+    // filing, so the clock only stops when the document is handed over.
+    function confSlaDays(t) {
+        if (!t.dateReceived) return 0;
+        var start = new Date(t.dateReceived + 'T00:00:00');
+        var end;
+        if (confReleased(t)) {
+            var hist = (t.history || []).slice().reverse();
+            // Handover is 'Released to Operator'; only fall back to 'Completed'
+            // when no release was recorded, or the clock runs past the handover.
+            var rel = hist.find(function(h){ return h.stage === STAGES.CONF_RELEASED && !h.type; })
+                   || hist.find(function(h){ return h.stage === STAGES.COMPLETED && !h.type; });
+            end = rel ? new Date(rel.timestamp) : new Date();
+        } else {
+            end = new Date();
+        }
+        return Math.floor((end - start) / 86400000);
+    }
+
+    function confSlaState(t) {
+        var d = confSlaDays(t);
+        if (confReleased(t)) return { days: d, state: d > CONF_ISSUE_DEADLINE_DAYS ? 'breached' : 'met' };
+        if (d > CONF_ISSUE_DEADLINE_DAYS) return { days: d, state: 'breached' };
+        if (d >= CONF_ISSUE_DEADLINE_DAYS - 1) return { days: d, state: 'due' };
+        return { days: d, state: 'ok' };
+    }
+
+    // Per-stage thresholds replace the old flat 24-hour rule. Values are the
+    // hours a request may sit in that stage before the dashboard flags it.
+    const STAGE_SLA_HOURS = {
+        'Request Prepared': 4, 'Submitted': 8, 'Checklisting': 8, 'Pre-acceptance Review': 24,
+        'Records Validation': 24, 'Assessment': 8, 'Payment Pending': 48, 'Payment Completed': 8,
+        'Unit Verification': 24, 'Confirmation Approval': 24, 'Confirmation Issued': 24,
+        'Technical Processing': 72, 'Legal Processing': 72, 'Administrative Processing': 72,
+        'Hearing Scheduled': 168, 'Awaiting RD Approval': 48, 'Decision Prepared': 24,
+        'Decision Released': 24, 'Incomplete - Awaiting Documents': 240, 'Released to Operator': 48
+    };
+    const STAGE_SLA_DEFAULT = 24;
+
+    function stageSla(stage) {
+        return STAGE_SLA_HOURS[stage] !== undefined ? STAGE_SLA_HOURS[stage] : STAGE_SLA_DEFAULT;
+    }
+
+    // ── DAILY CSV TO LTFRB CENTRAL OFFICE ───────────────────────────────
+    // Column names and order are fixed by the Central Office template and
+    // must not be renamed or reordered.
+    const CO_CSV_HEADERS = ['Region','Denomination','Case No.','Operator','Plate Number','Chassis No.','Remarks'];
+    const CO_CSV_EMAIL   = 'rfros.confirmation2026@ltfrb.gov.ph';
+    const CO_REGION_CODE = 'XII';
+
+    function confirmationsIssuedOn(dateStr) {
+        return transactions.filter(function(t) {
+            return confIssued(t) && localDate(t.confirmation.issuedAt) === dateStr;
+        });
+    }
+
+    function exportConfirmationsCSV(dateStr) {
+        var d = dateStr || document.getElementById('confCsvDate').value || localDate();
+        var list = confirmationsIssuedOn(d);
+        if (!list.length) { alert('No Confirmations were issued on ' + d + '.'); return; }
+
+        function csv(val) {
+            var v = (val === null || val === undefined) ? '' : String(val);
+            return '"' + v.replace(/"/g, '""') + '"';
+        }
+
+        var rows = [CO_CSV_HEADERS.map(csv).join(',')];
+        var units = 0;
+        list.forEach(function(t) {
+            var ent = confEntity(t);
+            var cu  = (t.confirmation && t.confirmation.units) || [];
+            (t.units || []).forEach(function(u, i) {
+                units++;
+                rows.push([
+                    CO_REGION_CODE,
+                    ent.denom || '',
+                    ent.caseNo || '',
+                    ent.fullName || t.entityName || t.applicantName || '',
+                    u.plate || '',
+                    u.chassis || '',
+                    (cu[i] && cu[i].remarks) || ''
+                ].map(csv).join(','));
+            });
+        });
+
+        var name = 'PUV Confirmed Units_Region ' + CO_REGION_CODE + '_' + d;
+        var blob = new Blob([rows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+        var url  = URL.createObjectURL(blob);
+        var a    = document.createElement('a');
+        a.href = url; a.download = name + '.csv'; a.click();
+        URL.revokeObjectURL(url);
+
+        alert('Exported ' + units + ' unit row(s) from ' + list.length + ' Confirmation(s).\n\n'
+            + 'Email the file to: ' + CO_CSV_EMAIL + '\n'
+            + 'Use this exact subject line:\n' + name);
+    }
+
+    function renderConfirmationPanel() {
+        var confs = transactions.filter(isConfirmationTxn);
+        var buckets = [
+            ['Filed / Validation',   [STAGES.PREPARED, STAGES.CONF_VALIDATION], 'bg-slate-100 text-slate-700'],
+            ['Awaiting Payment',     [STAGES.PAYMENT_PENDING],                  'bg-amber-100 text-amber-800'],
+            ['Awaiting Verification',[STAGES.PAYMENT_COMPLETED],                'bg-sky-100 text-sky-800'],
+            ['Awaiting Approval',    [STAGES.CONF_VERIFICATION],                'bg-violet-100 text-violet-800'],
+            ['Approved, not issued', [STAGES.CONF_APPROVAL],                    'bg-orange-100 text-orange-800'],
+            ['Issued',               [STAGES.CONF_ISSUED],                      'bg-blue-100 text-blue-800'],
+            ['Released to Operator', [STAGES.CONF_RELEASED, STAGES.COMPLETED],  'bg-green-100 text-green-800']
+        ];
+        var counts = document.getElementById('confBuckets');
+        if (!counts) return;
+        counts.innerHTML = buckets.map(function(b) {
+            var n = confs.filter(function(t){ return b[1].indexOf(t.stage) !== -1; }).length;
+            return '<div class="' + b[2] + ' rounded-lg px-3 py-2 text-center">'
+                + '<div class="text-xl font-bold">' + n + '</div>'
+                + '<div class="text-xs mt-0.5">' + b[0] + '</div></div>';
+        }).join('');
+
+        var open = confs.filter(function(t){ return !confReleased(t) && t.stage !== STAGES.NOT_ACCEPTED; });
+        var due      = open.filter(function(t){ return confSlaState(t).state === 'due'; });
+        var breached = open.filter(function(t){ return confSlaState(t).state === 'breached'; });
+
+        document.getElementById('confDueCount').textContent      = due.length;
+        document.getElementById('confBreachedCount').textContent = breached.length;
+
+        var listEl = document.getElementById('confSlaList');
+        var flagged = breached.concat(due);
+        if (!flagged.length) {
+            listEl.innerHTML = '<span class="text-gray-400 text-sm">No Confirmation is near the 5-day deadline &#10003;</span>';
+        } else {
+            listEl.innerHTML = flagged.map(function(t) {
+                var st = confSlaState(t);
+                var tone = st.state === 'breached' ? 'text-red-700 border-red-200' : 'text-amber-700 border-amber-200';
+                return '<div class="flex justify-between items-start gap-2 py-2 border-b ' + tone + ' last:border-0">'
+                    + '<div class="min-w-0"><div class="font-semibold text-sm">' + t.referenceNumber + '</div>'
+                    + '<div class="text-xs text-gray-600 truncate">' + escHtml(t.entityName || t.applicantName) + '</div>'
+                    + '<div class="text-xs text-gray-500">Filed ' + t.dateReceived + ' &bull; ' + t.stage + '</div></div>'
+                    + '<span class="shrink-0 text-xs font-bold">' + st.days + ' day(s)'
+                    + (st.state === 'breached' ? ' &#9888;' : '') + '</span></div>';
+            }).join('');
+        }
+    }
+
     // ── TRANSACTION STUB PRINTER ───────────────────────────
     function printTransactionStub(txnId) {
         var t = transactions.find(function(x){ return x.id === txnId; });
@@ -3792,7 +4389,7 @@ function onEntityInput(val, inputId, dropId) {
         } else {
             note = 'Acceptance stub printed \u2014 official acceptance of the application for confirmation of the unit';
         }
-        t.history.push({ stage: t.stage, timestamp: t.stub.lastPrintedAt, notes: note });
+        t.history.push({ stage: t.stage, type: 'NOTE', timestamp: t.stub.lastPrintedAt, notes: note });
         await save();
         renderDashboard();
         renderTransactions();
@@ -3862,16 +4459,16 @@ function onEntityInput(val, inputId, dropId) {
         if (!t) { alert('Transaction not found.'); return; }
         if (!stubIssued(t)) { alert('Print the acceptance stub first \u2014 there is nothing to return yet.'); return; }
         _ltoTxnId = t.id;
-        var c = t.ltoConfirmation || {};
+        var c = ltoReg(t) || {};
         var today = new Date().toISOString().split('T')[0];
         document.getElementById('ltoRefLabel').textContent = t.referenceNumber + ' \u2014 ' + t.applicantName;
         document.getElementById('lto-returned-date').value  = c.returnedAt ? c.returnedAt.split('T')[0] : today;
-        document.getElementById('lto-confirmed-date').value = c.confirmedAt ? c.confirmedAt.split('T')[0] : '';
+        document.getElementById('lto-confirmed-date').value = c.registeredAt ? c.registeredAt.split('T')[0] : '';
         document.getElementById('lto-office').value    = c.ltoOffice || 'LTO Regional Office XII';
         document.getElementById('lto-refno').value     = c.ltoRefNo || '';
         document.getElementById('lto-verifier').value  = c.verifiedBy || '';
         document.getElementById('lto-remarks').value   = c.remarks || '';
-        document.getElementById(c.status === 'Confirmed' ? 'lto-status-confirmed' : 'lto-status-returned').checked = true;
+        document.getElementById(c.status === 'Registered' ? 'lto-status-confirmed' : 'lto-status-returned').checked = true;
         document.getElementById('ltoModal').classList.remove('hidden');
     }
 
@@ -3887,13 +4484,14 @@ function onEntityInput(val, inputId, dropId) {
         var returned  = document.getElementById('lto-returned-date').value;
         var confirmed = document.getElementById('lto-confirmed-date').value;
         if (!returned) { alert('Please enter the date the stub was returned.'); return; }
-        if (status === 'Confirmed' && !confirmed) { alert('Please enter the date the LTO Regional Office confirmed the unit.'); return; }
+        if (status === 'Registered' && !confirmed) { alert('Please enter the date the LTO registered the unit.'); return; }
         var office = document.getElementById('lto-office').value.trim() || 'LTO Regional Office XII';
         var refNo  = document.getElementById('lto-refno').value.trim();
-        t.ltoConfirmation = {
+        delete t.ltoConfirmation;   // superseded key, avoid two sources of truth
+        t.ltoRegistration = {
             status: status,
             returnedAt: returned + 'T00:00:00',
-            confirmedAt: confirmed ? confirmed + 'T00:00:00' : '',
+            registeredAt: confirmed ? confirmed + 'T00:00:00' : '',
             ltoOffice: office,
             ltoRefNo: refNo,
             verifiedBy: document.getElementById('lto-verifier').value.trim(),
@@ -3902,10 +4500,11 @@ function onEntityInput(val, inputId, dropId) {
         };
         t.history.push({
             stage: t.stage,
-            timestamp: t.ltoConfirmation.recordedAt,
-            notes: status === 'Confirmed'
-                ? 'Acceptance stub returned and unit confirmation verified by ' + office + (refNo ? ' (LTO Ref# ' + refNo + ')' : '')
-                : 'Acceptance stub returned by client \u2014 awaiting confirmation by ' + office
+            type: 'NOTE',
+            timestamp: t.ltoRegistration.recordedAt,
+            notes: status === 'Registered'
+                ? 'Acceptance stub returned and unit registered with ' + office + (refNo ? ' (LTO Ref# ' + refNo + ')' : '')
+                : 'Acceptance stub returned by client \u2014 awaiting registration with ' + office
         });
         await save();
         closeLTOModal();
@@ -3916,6 +4515,57 @@ function onEntityInput(val, inputId, dropId) {
     }
 
 </script>
+
+    <!-- ISSUE CONFIRMATION (ANNEX "A") MODAL -->
+    <div id="confirmationModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg max-w-2xl w-full p-6 max-h-screen overflow-y-auto">
+            <h2 class="text-xl font-bold mb-1 text-blue-800">&#128220; Issue Confirmation &mdash; Annex &quot;A&quot;</h2>
+            <p id="confRefLabel" class="text-sm text-gray-500 mb-3"></p>
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-900 mb-4 leading-relaxed">
+                Issued under <strong>LTFRB MC No. 2026-102</strong>. The operator must receive the physical copy
+                <strong>within 5 days of filing</strong> (sec. 3). The QR code lets the LTO validate it (sec. 4).
+                <div id="conf-expiry-note" class="mt-2 font-semibold"></div>
+            </div>
+            <div class="space-y-4">
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Classification</label>
+                        <input type="text" id="conf-class" placeholder="Others" class="w-full px-3 py-2 border rounded-lg text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Date Granted *</label>
+                        <input type="date" id="conf-granted" class="w-full px-3 py-2 border rounded-lg text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">EOV Filed</label>
+                        <input type="date" id="conf-eov" class="w-full px-3 py-2 border rounded-lg text-sm">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Findings</label>
+                        <input type="text" id="conf-findings" class="w-full px-3 py-2 border rounded-lg text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Remarks</label>
+                        <input type="text" id="conf-remarks" class="w-full px-3 py-2 border rounded-lg text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Recommendations</label>
+                    <textarea id="conf-recom" rows="2" class="w-full px-3 py-2 border rounded-lg text-sm"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">Per-unit Remarks <span class="text-xs text-gray-400">(fixed list from the Central Office template)</span></label>
+                    <div id="confUnitRemarks" class="max-h-56 overflow-y-auto pr-1"></div>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="closeConfirmationModal()" class="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
+                <button onclick="submitConfirmation()" class="flex-1 px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 font-medium">&#128424; Issue &amp; Print Confirmation</button>
+            </div>
+        </div>
+    </div>
 
     <!-- ACCEPTANCE STUB REPRINT MODAL -->
     <div id="reprintModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -3960,7 +4610,7 @@ function onEntityInput(val, inputId, dropId) {
     <!-- STUB RETURN / LTO CONFIRMATION MODAL -->
     <div id="ltoModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-lg max-w-lg w-full p-6 max-h-screen overflow-y-auto">
-            <h2 class="text-lg font-bold mb-1 text-teal-700">&#10003; Stub Return &amp; LTO Confirmation</h2>
+            <h2 class="text-lg font-bold mb-1 text-teal-700">&#10003; Stub Return &amp; LTO Registration</h2>
             <p id="ltoRefLabel" class="text-xs text-gray-400 mb-4"></p>
             <div class="space-y-4">
                 <div>
@@ -3968,11 +4618,11 @@ function onEntityInput(val, inputId, dropId) {
                     <div class="space-y-2">
                         <label class="flex items-start gap-2 cursor-pointer p-2 rounded-lg border border-amber-200 bg-amber-50">
                             <input type="radio" name="lto-status" value="Returned" id="lto-status-returned" checked class="mt-0.5">
-                            <span class="text-sm"><span class="font-semibold text-amber-700">&#8617; Returned</span> &mdash; client brought the stub back, LTO confirmation still pending</span>
+                            <span class="text-sm"><span class="font-semibold text-amber-700">&#8617; Returned</span> &mdash; client brought the stub back, LTO registration still pending</span>
                         </label>
                         <label class="flex items-start gap-2 cursor-pointer p-2 rounded-lg border border-teal-200 bg-teal-50">
-                            <input type="radio" name="lto-status" value="Confirmed" id="lto-status-confirmed" class="mt-0.5">
-                            <span class="text-sm"><span class="font-semibold text-teal-700">&#10003; Confirmed</span> &mdash; unit confirmation verified by the LTO Regional Office</span>
+                            <input type="radio" name="lto-status" value="Registered" id="lto-status-confirmed" class="mt-0.5">
+                            <span class="text-sm"><span class="font-semibold text-teal-700">&#10003; Registered</span> &mdash; unit registered with the LTO under the issued Confirmation</span>
                         </label>
                     </div>
                 </div>
@@ -3982,7 +4632,7 @@ function onEntityInput(val, inputId, dropId) {
                         <input type="date" id="lto-returned-date" class="w-full px-3 py-2 border rounded-lg text-sm">
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold mb-1">Date Confirmed by LTO</label>
+                        <label class="block text-sm font-semibold mb-1">Date Registered with LTO</label>
                         <input type="date" id="lto-confirmed-date" class="w-full px-3 py-2 border rounded-lg text-sm">
                     </div>
                 </div>
